@@ -1,0 +1,1423 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GAIA · Multi-Head Attention</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   RESET & BASE — Dark premium theme
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #05070d;
+  --bg-card: #0a0e1a;
+  --bg-card-hover: #0f1426;
+  --glass: rgba(10, 14, 26, 0.7);
+  --glass-border: rgba(255,255,255,0.04);
+  --surface: rgba(14, 18, 32, 0.85);
+  --surface-hover: rgba(18, 24, 44, 0.92);
+  --text: #bcc4d6;
+  --text-dim: #6b738a;
+  --text-bright: #eef1f8;
+  --accent: #4d8af0;
+  --accent-glow: rgba(77, 138, 240, 0.3);
+  --accent-soft: rgba(77, 138, 240, 0.08);
+  --green: #34d399;
+  --orange: #f59e4b;
+  --red: #f87171;
+  --purple: #a78bfa;
+  --cyan: #22d3ee;
+  --border: rgba(255,255,255,0.05);
+  --border-strong: rgba(255,255,255,0.1);
+  --radius: 14px;
+  --radius-sm: 8px;
+  --radius-lg: 20px;
+  --font: 'Montserrat', system-ui, -apple-system, sans-serif;
+  --ease: 0.3s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+html { scroll-behavior: smooth; font-size: 16px; background: var(--bg); }
+body {
+  font-family: var(--font);
+  font-weight: 400;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.7;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Ambient light */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 10%, rgba(77,138,240,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 80% 50%, rgba(34,211,238,0.04) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 40% at 50% 90%, rgba(167,139,250,0.04) 0%, transparent 55%);
+}
+
+/* Noise texture overlay */
+body::after {
+  content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  opacity: 0.015;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 180px;
+}
+
+/* ============================================================
+   CONTAINER
+   ============================================================ */
+.container {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 24px 28px 60px;
+  position: relative;
+  z-index: 1;
+}
+
+/* ============================================================
+   HOME PAGE
+   ============================================================ */
+#home {
+  display: block;
+}
+
+.home-header {
+  text-align: center;
+  padding: 48px 0 16px;
+}
+
+.home-header h1 {
+  font-size: 3rem;
+  font-weight: 800;
+  letter-spacing: -1px;
+  background: linear-gradient(135deg, #6da8ff, #22d3ee);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 4px;
+}
+
+.home-header .subtitle {
+  font-size: 0.95rem;
+  color: var(--text-dim);
+  font-weight: 500;
+  margin-bottom: 2px;
+}
+
+.home-header .meta {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+
+/* Card Grid */
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 16px;
+  margin-top: 32px;
+}
+
+/* Individual Card */
+.bloco-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 26px 24px 22px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bloco-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 3px;
+  background: var(--card-accent, var(--accent));
+  opacity: 0;
+  transition: opacity 0.25s;
+}
+
+.bloco-card:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-strong);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.35);
+}
+
+.bloco-card:hover::before { opacity: 1; }
+
+.bloco-card .card-icon {
+  width: 44px; height: 44px;
+  border-radius: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  background: var(--card-accent-soft, var(--accent-soft));
+}
+
+.bloco-card .card-icon svg {
+  width: 20px; height: 20px;
+}
+
+.bloco-card .card-number {
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--card-accent, var(--accent));
+}
+
+.bloco-card h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-bright);
+  line-height: 1.3;
+}
+
+.bloco-card .card-time {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bloco-card .card-desc {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+.bloco-card .card-arrow {
+  margin-top: auto;
+  align-self: flex-end;
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: var(--card-accent-soft, var(--accent-soft));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.25s;
+  color: var(--card-accent, var(--accent));
+}
+
+.bloco-card:hover .card-arrow {
+  background: var(--card-accent, var(--accent));
+  color: #fff;
+}
+
+/* Card accent colors */
+.bloco-card:nth-child(1) { --card-accent: #f59e4b; --card-accent-soft: rgba(245,158,75,0.1); }
+.bloco-card:nth-child(2) { --card-accent: #4d8af0; --card-accent-soft: rgba(77,138,240,0.1); }
+.bloco-card:nth-child(3) { --card-accent: #34d399; --card-accent-soft: rgba(52,211,153,0.1); }
+.bloco-card:nth-child(4) { --card-accent: #a78bfa; --card-accent-soft: rgba(167,139,250,0.1); }
+.bloco-card:nth-child(5) { --card-accent: #22d3ee; --card-accent-soft: rgba(34,211,238,0.1); }
+.bloco-card:nth-child(6) { --card-accent: #f87171; --card-accent-soft: rgba(248,113,113,0.1); }
+.bloco-card:nth-child(7) { --card-accent: #f59e4b; --card-accent-soft: rgba(245,158,75,0.1); }
+.bloco-card:nth-child(8) { --card-accent: #34d399; --card-accent-soft: rgba(52,211,153,0.1); }
+
+/* ============================================================
+   SECTION PAGES (hidden by default)
+   ============================================================ */
+.section-page {
+  display: none;
+  animation: fadeSlideIn 0.35s ease;
+}
+
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Back button */
+.back-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 0;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.btn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 8px 18px;
+  border-radius: 25px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: var(--font);
+}
+
+.btn-back:hover {
+  background: var(--surface-hover);
+  border-color: var(--accent);
+  color: var(--text-bright);
+  box-shadow: 0 0 16px var(--accent-glow);
+}
+
+.btn-back svg {
+  width: 15px; height: 15px;
+  transition: transform 0.2s;
+}
+
+.btn-back:hover svg {
+  transform: translateX(-3px);
+}
+
+.section-breadcrumb {
+  font-size: 0.68rem;
+  color: var(--text-dim);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+}
+
+/* Section content styling */
+.section-page h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-bright);
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.section-page h2 .section-icon {
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  border: 1px solid rgba(77,138,240,0.2);
+}
+
+.section-page .subtitle {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  margin-bottom: 24px;
+  margin-left: 52px;
+}
+
+/* Content cards */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px 28px;
+  margin: 14px 0;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: var(--ease);
+}
+.card:hover { border-color: var(--border-strong); }
+.card.accent-left { border-left: 2px solid var(--accent); }
+.card.green-left { border-left: 2px solid var(--green); }
+.card.orange-left { border-left: 2px solid var(--orange); }
+.card.purple-left { border-left: 2px solid var(--purple); }
+
+/* ============================================================
+   DRAWING STEPS — Accordion
+   ============================================================ */
+.draw-step {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin: 10px 0; overflow: hidden; transition: var(--ease);
+}
+.draw-step:hover { border-color: var(--border-strong); }
+.draw-step-header {
+  padding: 14px 20px; display: flex; align-items: center; gap: 12px;
+  cursor: pointer; user-select: none; font-weight: 600; font-size: 0.85rem;
+  color: var(--text-bright); transition: var(--ease);
+}
+.draw-step-header:hover { background: rgba(255,255,255,0.02); }
+.draw-step-num {
+  background: var(--accent-soft); color: var(--accent);
+  font-weight: 800; font-size: 0.68rem; min-width: 28px; height: 28px;
+  border-radius: 8px; display: flex; align-items: center; justify-content: center;
+  border: 1px solid rgba(77,138,240,0.2);
+}
+.draw-step-body { padding: 0 20px 16px; display: none; font-size: 0.83rem; color: var(--text-dim); }
+.draw-step.open .draw-step-body { display: block; }
+
+/* ============================================================
+   TABLES
+   ============================================================ */
+.table-modern {
+  width: 100%; border-collapse: collapse; margin: 12px 0;
+  font-size: 0.78rem; border-radius: var(--radius); overflow: hidden;
+}
+.table-modern th {
+  background: var(--accent-soft); padding: 10px 14px; text-align: left;
+  font-weight: 700; color: var(--accent); font-size: 0.65rem;
+  text-transform: uppercase; letter-spacing: 0.8px;
+  border-bottom: 1px solid var(--border-strong);
+}
+.table-modern td { padding: 10px 14px; border-bottom: 1px solid var(--border); }
+.table-modern tr:hover td { background: rgba(255,255,255,0.02); }
+.table-modern .row-best td { background: rgba(52,211,153,0.06); color: var(--green); font-weight: 600; }
+.table-modern .row-worst td { color: var(--red); }
+.table-modern .row-highlight td { background: var(--accent-soft); }
+
+/* ============================================================
+   EQUATION WALKTHROUGH
+   ============================================================ */
+.eq-walkthrough { display: flex; flex-wrap: wrap; gap: 10px; margin: 16px 0; }
+.eq-step-walk {
+  flex: 1; min-width: 155px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px 14px; text-align: center;
+  cursor: pointer; transition: var(--ease);
+}
+.eq-step-walk:hover, .eq-step-walk.active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  box-shadow: 0 0 24px var(--accent-glow);
+}
+.eq-step-walk .eq-num {
+  font-size: 0.6rem; font-weight: 700; color: var(--accent);
+  text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 4px;
+}
+.eq-step-walk .eq-title { font-size: 0.82rem; font-weight: 600; color: var(--text-bright); }
+.eq-step-walk .eq-dim { font-size: 0.65rem; color: var(--text-dim); margin-top: 3px; font-weight: 500; }
+
+.eq-detail {
+  background: var(--surface); border: 2px solid var(--accent);
+  border-radius: var(--radius); padding: 20px 24px; margin: 10px 0; display: none;
+}
+.eq-detail.show { display: block; }
+.eq-detail h4 { color: var(--accent); font-weight: 700; margin-bottom: 8px; }
+
+/* ============================================================
+   BLEU LINE CHART
+   ============================================================ */
+.bleu-lab {
+  background: linear-gradient(160deg, rgba(10,14,26,0.9) 0%, rgba(6,8,15,0.95) 100%);
+  border: 1px solid var(--border-strong); border-radius: var(--radius-lg);
+  padding: 28px; margin: 20px 0; position: relative; overflow: hidden;
+}
+.bleu-lab::before {
+  content: ''; position: absolute; top: 0; left: 40px; right: 40px; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent); opacity: 0.4;
+}
+.bleu-controls-neon {
+  display: flex; gap: 24px; flex-wrap: wrap; align-items: end;
+  margin: 18px 0; padding: 18px;
+  background: var(--accent-soft); border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+.bleu-control-group { display: flex; flex-direction: column; gap: 4px; }
+.bleu-control-group label {
+  font-size: 0.6rem; color: var(--text-dim); text-transform: uppercase;
+  letter-spacing: 1.5px; font-weight: 700;
+}
+.bleu-control-group input[type="range"] { width: 140px; accent-color: var(--accent); }
+.bleu-val {
+  font-size: 1.4rem; font-weight: 800; color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+.bleu-big-score {
+  font-size: 3.2rem; font-weight: 800; letter-spacing: -1px;
+  background: linear-gradient(180deg, #6da8ff 0%, #4d8af0 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.bleu-chart-area {
+  position: relative; height: 260px; margin: 8px 0;
+  background: rgba(6,8,15,0.5); border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+
+/* ============================================================
+   TIMELINE
+   ============================================================ */
+.timeline {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px; margin: 16px 0;
+}
+.timeline-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px; transition: var(--ease);
+  position: relative; overflow: hidden;
+}
+.timeline-card::after {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--purple));
+  opacity: 0; transition: var(--ease);
+}
+.timeline-card:hover { border-color: var(--border-strong); transform: translateY(-2px); }
+.timeline-card:hover::after { opacity: 1; }
+.timeline-card.featured {
+  border-color: var(--accent); box-shadow: 0 0 28px var(--accent-glow);
+}
+.timeline-card.featured::after { opacity: 1; background: var(--accent); }
+.timeline-card .year {
+  font-size: 0.6rem; font-weight: 700; letter-spacing: 1.2px;
+  text-transform: uppercase; margin-bottom: 4px;
+}
+.timeline-card h4 { color: var(--text-bright); font-size: 0.88rem; font-weight: 700; margin-bottom: 4px; }
+.timeline-card p { font-size: 0.72rem; color: var(--text-dim); line-height: 1.5; }
+.timeline-card .badge {
+  display: inline-block; padding: 3px 10px; border-radius: 12px;
+  font-size: 0.6rem; font-weight: 700; letter-spacing: 0.4px; margin-top: 8px;
+}
+
+/* ============================================================
+   WORD GRAPH
+   ============================================================ */
+.word-graph {
+  background: var(--surface); border: 1px solid var(--border-strong);
+  border-radius: var(--radius); padding: 16px; margin: 14px 0; text-align: center;
+}
+
+/* ============================================================
+   HIGHLIGHT BOX & BUTTONS
+   ============================================================ */
+.highlight-box {
+  background: var(--accent-soft);
+  border: 1px solid rgba(77,138,240,0.2);
+  border-radius: var(--radius-sm);
+  padding: 16px 20px;
+  margin: 16px 0;
+}
+
+.highlight-box .big-eq {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--accent);
+  font-family: 'Cascadia Code', 'Fira Code', monospace;
+  letter-spacing: -0.3px;
+}
+
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 10px 22px; border-radius: 26px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface); color: var(--text-bright);
+  cursor: pointer; font-size: 0.75rem; font-weight: 600;
+  letter-spacing: 0.3px; transition: var(--ease);
+  font-family: var(--font); text-decoration: none;
+}
+.btn:hover { border-color: var(--accent); background: var(--accent-soft); }
+.btn svg { width: 15px; height: 15px; }
+
+/* ============================================================
+   IMAGE DISPLAY
+   ============================================================ */
+.img-display {
+  background: var(--surface); border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg); padding: 28px; text-align: center; margin: 16px 0;
+}
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+.footer {
+  text-align: center;
+  margin-top: 40px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+  font-size: 0.68rem;
+  color: var(--text-dim);
+  font-weight: 500;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 768px) {
+  .container { padding: 12px 14px 40px; }
+  .home-header h1 { font-size: 2rem; }
+  .cards-grid { grid-template-columns: 1fr; gap: 12px; }
+  .section-page h2 { font-size: 1.2rem; }
+  .section-page .subtitle { margin-left: 0; }
+  .eq-walkthrough { flex-direction: column; }
+  .timeline { grid-template-columns: 1fr; }
+  .bleu-big-score { font-size: 2rem; }
+  .table-modern { font-size: 0.65rem; }
+  .table-modern th, .table-modern td { padding: 6px 8px; }
+}
+</style>
+
+<!-- ============================================================
+     SVG ICONS (inline sprite)
+     ============================================================ -->
+<svg style="display:none;" aria-hidden="true">
+  <symbol id="ico-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
+  <symbol id="ico-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></symbol>
+  <symbol id="ico-scale" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></symbol>
+  <symbol id="ico-brain" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/><path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/><path d="M17.599 6.5a3 3 0 0 0 .399-1.375"/><path d="M6.003 5.125A3 3 0 0 0 6.401 6.5"/><path d="M3.477 10.896a4 4 0 0 1 .585-.396"/><path d="M19.938 10.5a4 4 0 0 1 .585.396"/><path d="M6 18a4 4 0 0 1-1.967-.516"/><path d="M19.967 17.484A4 4 0 0 1 18 18"/></symbol>
+  <symbol id="ico-bar-chart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></symbol>
+  <symbol id="ico-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+  <symbol id="ico-box" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></symbol>
+  <symbol id="ico-flash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></symbol>
+  <symbol id="ico-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></symbol>
+  <symbol id="ico-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></symbol>
+  <symbol id="ico-chevron-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></symbol>
+</svg>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ============================================================
+       HOME
+       ============================================================ -->
+  <div id="home">
+    <div class="home-header">
+      <h1>GAIA</h1>
+      <p class="subtitle">Multi-Head Attention · Plataforma Interativa de Apresentação</p>
+      <p class="meta">Baseado em "Attention Is All You Need" (Vaswani et al., 2017) · 30 minutos · 8 blocos</p>
+    </div>
+
+    <div class="cards-grid">
+      <!-- Card 1 — Contexto e Problema -->
+      <div class="bloco-card" onclick="showSection('bloco1')">
+        <div class="card-number">Bloco 1</div>
+        <div class="card-icon"><svg stroke="var(--card-accent)"><use href="#ico-link"/></svg></div>
+        <h3>Contexto e Problema</h3>
+        <div class="card-time">⏱ 5 minutos</div>
+        <p class="card-desc">O gargalo das RNNs/LSTMs, a promessa do Self-Attention com path length O(1), e a Tabela 1 do paper.</p>
+        <div class="card-arrow">→</div>
+      </div>
+
+      <!-- Card 2 — Query, Key, Value -->
+      <div class="bloco-card" onclick="showSection('bloco2')">
+        <div class="card-number">Bloco 2</div>
+        <div class="card-icon"><svg stroke="var(--card-accent)"><use href="#ico-search"/></svg></div>
+        <h3>Query, Key, Value</h3>
+        <div class="card-time">⏱ 5 minutos</div>
+        <p class="card-desc">Analogia do YouTube, exemplo com frase real "O gato comeu peixe", e a equação completa.</p>
+        <div class="card-arrow">→</div>
+      </div>
+
+      <!-- Card 3 — Scaled Dot-Product -->
+      <div class="bloco-card" onclick="showSection('bloco3')">
+        <div class="card-number">Bloco 3</div>
+        <div class="card-icon"><svg stroke="var(--card-accent)"><use href="#ico-scale"/></svg></div>
+        <h3>Scaled Dot-Product Attention</h3>
+        <div class="card-time">⏱ 6 minutos</div>
+        <p class="card-desc">Visualização interativa da equação passo a passo, matriz de atenção 4×4, e prova do √d<sub>k</sub>.</p>
+        <div class="card-arrow">→</div>
+      </div>
+
+      <!-- Card 4 — Multi-Head Attention -->
+      <div class="bloco-card" onclick="showSection('bloco4')">
+        <div class="card-number">Bloco 4 ★</div>
+        <div class="card-icon"><svg stroke="var(--card-accent)"><use href="#ico-brain"/></svg></div>
+        <h3>Multi-Head Attention</h3>
+        <div class="card-time">⏱ 8 minutos</div>
+        <p class="card-desc">Por que 8 cabeças pensam melhor que 1? Arquitetura passo a passo, projeções W<sup>Q,K,V,O</sup>, e desenho comparativo.</p>
+        <div class="card-arrow">→</div>
+      </div>
+
+      <!-- Card 5 — BLEU Lab -->
+      <div class="bloco-card" onclick="showSection('bloco5')">
+        <div class="card-number">Bloco 5</div>
+        <div class="card-icon"><svg stroke="var(--card-accent)"><use href="#ico-bar-chart"/></svg></div>
+        <h3>BLEU Lab · Evidência</h3>
+        <div class="card-time">⏱ 4 minutos</div>
+        <p class="card-desc">Simulador interativo com gráfico de linha, Tabela 3 do paper, e o sweet spot h=8, d<sub>k</sub>=64.</p>
+        <div class="card-arrow">→</div>
+      </div>
+
+      <!-- Card 6 — 3 Tipos de Atenção -->
+      <div class="bloco-card" onclick="showSection('bloco6')">
+        <div class="card-number">Bloco 6</div>
+        <div class="card-icon"><svg stroke="var(--card-accent)"><use href="#ico-lock"/></svg></div>
+        <h3>Os 3 Tipos de Atenção</h3>
+        <div class="card-time">⏱ 4 minutos</div>
+        <p class="card-desc">Self-Attention no Encoder, Masked no Decoder, e Cross-Attention — a ponte encoder→decoder.</p>
+        <div class="card-arrow">→</div>
+      </div>
+
+      <!-- Card 7 — Transformer Completo -->
+      <div class="bloco-card" onclick="showSection('bloco7')">
+        <div class="card-number">Bloco 7</div>
+        <div class="card-icon"><svg stroke="var(--card-accent)"><use href="#ico-box"/></svg></div>
+        <h3>Transformer Completo</h3>
+        <div class="card-time">⏱ 3 minutos</div>
+        <p class="card-desc">Revisão da arquitetura completa: Encoder, Decoder, FFN, Add & Norm, e conexões residuais.</p>
+        <div class="card-arrow">→</div>
+      </div>
+
+      <!-- Card 8 — Variantes Modernas -->
+      <div class="bloco-card" onclick="showSection('bloco8')">
+        <div class="card-number">Bloco 8</div>
+        <div class="card-icon"><svg stroke="var(--card-accent)"><use href="#ico-flash"/></svg></div>
+        <h3>Variantes Modernas</h3>
+        <div class="card-time">⏱ 4 minutos</div>
+        <p class="card-desc">Linha do tempo MHA→MQA→Flash→GQA, tabela comparativa, e Flash Attention em destaque.</p>
+        <div class="card-arrow">→</div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <p>GAIA · Multi-Head Attention · "Attention Is All You Need" (Vaswani et al., 2017)</p>
+      <p><span style="color:var(--accent);font-weight:600;">Shayene Figueredo · 2026</span></p>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       BLOCO 1 — CONTEXTO E PROBLEMA (5 min)
+       ============================================================ -->
+  <div class="section-page" id="bloco1">
+    <div class="back-bar">
+      <button class="btn-back" onclick="showHome()">
+        <svg><use href="#ico-chevron-left"/></svg>
+        Voltar para Home
+      </button>
+      <span class="section-breadcrumb">Bloco 1 de 8 · 5 minutos</span>
+    </div>
+
+    <h2><span class="section-icon"><svg width="18" height="18" stroke="var(--accent)"><use href="#ico-link"/></svg></span> Contexto e Problema</h2>
+    <p class="subtitle">5 min · O gargalo das RNNs e a promessa do Self-Attention</p>
+
+    <div class="card accent-left">
+      <h4 style="color:var(--text-bright);font-weight:700;margin-bottom:8px;font-size:0.9rem;">O Problema Fundamental</h4>
+      <p style="font-size:0.85rem;">Antes dos Transformers, as <strong>RNNs e LSTMs</strong> dominavam o processamento sequencial. Mas:</p>
+      <ul style="margin:10px 0 0 20px;font-size:0.83rem;color:var(--text-dim);">
+        <li><strong style="color:var(--text);">Sequencial:</strong> h<sub>t</sub> depende de h<sub>t-1</sub> — impossível paralelizar</li>
+        <li><strong style="color:var(--text);">Path length O(n):</strong> sinal entre palavras distantes atravessa toda a cadeia</li>
+        <li><strong style="color:var(--text);">Vanishing gradient:</strong> dependências longas se perdem no treino</li>
+      </ul>
+    </div>
+
+    <div class="card" style="border:1px solid var(--border-strong);">
+      <h4 style="color:var(--text-bright);font-weight:700;margin-bottom:10px;font-size:0.88rem;">Tabela 1 do Paper · Comparação de Arquiteturas</h4>
+      <table class="table-modern">
+        <tr><th>Layer Type</th><th>Complexidade</th><th>Operações Sequenciais</th><th>Path Length Máximo</th></tr>
+        <tr class="row-worst"><td>Recurrent (LSTM/GRU)</td><td>O(n·d²)</td><td>O(n)</td><td>O(n)</td></tr>
+        <tr><td>Convolutional</td><td>O(k·n·d²)</td><td>O(1)</td><td>O(log_k n)</td></tr>
+        <tr class="row-best"><td>Self-Attention</td><td>O(n²·d)</td><td>O(1)</td><td>O(1)</td></tr>
+      </table>
+      <p style="font-size:0.65rem;color:var(--text-dim);margin-top:6px;">n = comprimento da sequência · d = dimensão do modelo · k = kernel size</p>
+    </div>
+
+    <!-- CNN EXPLAINED -->
+    <div class="card orange-left" style="margin-top:18px;">
+      <h4 style="color:var(--orange);font-weight:700;margin-bottom:4px;font-size:0.9rem;">
+        🔍 CNN Explicada de Forma Intuitiva
+      </h4>
+      <p style="font-size:0.72rem;color:var(--text-dim);margin-bottom:14px;">Antes do Transformer, as CNNs foram a principal tentativa de substituir RNNs. Clique em cada passo para entender.</p>
+
+      <!-- Step 1: Analogia -->
+      <div class="draw-step">
+        <div class="draw-step-header" onclick="this.parentElement.classList.toggle('open')">
+          <span class="draw-step-num">1</span> O que é uma CNN? — Analogia da Lupa
+        </div>
+        <div class="draw-step-body">
+          <p style="margin-bottom:10px;">Imagine uma <strong style="color:var(--orange);">lupa</strong> que você desliza sobre uma frase. A lupa só vê <strong style="color:var(--text-bright);">2 ou 3 palavras por vez</strong> através de uma "janelinha".</p>
+          <p style="margin-bottom:10px;">Cada vez que você posiciona a lupa, ela responde uma pergunta como: <em>"Tem um verbo aqui?"</em> ou <em>"Tem um sujeito?"</em>. Essa lupa se chama <strong style="color:var(--orange);">kernel</strong> (ou filtro).</p>
+          <p style="margin-bottom:6px;"><strong style="color:var(--text-bright);">O pulo do gato:</strong> Diferente da RNN que lê palavra por palavra <em>em fila</em>, a CNN pode colocar <strong style="color:var(--green);">VÁRIAS lupas ao mesmo tempo</strong> em posições diferentes da frase. Todo mundo trabalha em paralelo!</p>
+          <div style="text-align:center;margin:14px 0;">
+            <svg width="500" height="95">
+              <text x="250" y="14" fill="#6b738a" text-anchor="middle" font-size="9" font-family="Montserrat,sans-serif">Frase: "O gato comeu peixe" — kernel de tamanho 3 deslizando →</text>
+              <!-- Palavras -->
+              <circle cx="65" cy="50" r="18" fill="none" stroke="#f59e4b" stroke-width="1.5"/><text x="65" y="54" fill="#f59e4b" text-anchor="middle" font-size="10" font-family="Montserrat,sans-serif" font-weight="600">O</text>
+              <circle cx="165" cy="50" r="18" fill="none" stroke="#f59e4b" stroke-width="1.5"/><text x="165" y="54" fill="#f59e4b" text-anchor="middle" font-size="10" font-family="Montserrat,sans-serif" font-weight="600">gato</text>
+              <circle cx="265" cy="50" r="18" fill="none" stroke="#f59e4b" stroke-width="1.5"/><text x="265" y="54" fill="#f59e4b" text-anchor="middle" font-size="10" font-family="Montserrat,sans-serif" font-weight="600">comeu</text>
+              <circle cx="365" cy="50" r="18" fill="none" stroke="#f59e4b" stroke-width="1.5"/><text x="365" y="54" fill="#f59e4b" text-anchor="middle" font-size="10" font-family="Montserrat,sans-serif" font-weight="600">peixe</text>
+              <!-- Janela 1: O gato comeu -->
+              <rect x="44" y="28" width="156" height="44" rx="10" fill="none" stroke="#f59e4b" stroke-width="2.5" stroke-dasharray="6,3" opacity="0.8"/>
+              <text x="122" y="86" fill="#f59e4b" text-anchor="middle" font-size="8" font-family="Montserrat,sans-serif" font-weight="700">Janela 1: ["O","gato","comeu"]</text>
+              <!-- Janela 2: gato comeu peixe (mais fraca pra mostrar que é o próximo passo) -->
+              <rect x="142" y="28" width="160" height="44" rx="10" fill="none" stroke="#f59e4b" stroke-width="1.2" stroke-dasharray="4,4" opacity="0.35"/>
+              <text x="222" y="93" fill="#f59e4b" text-anchor="middle" font-size="7" font-family="Montserrat,sans-serif" opacity="0.5">Janela 2: ["gato","comeu","peixe"]</text>
+            </svg>
+          </div>
+          <p style="font-size:0.78rem;color:var(--green);font-weight:600;text-align:center;">✨ Todas as janelas processam AO MESMO TEMPO = paralelismo!</p>
+        </div>
+      </div>
+
+      <!-- Step 2: CNN vs RNN -->
+      <div class="draw-step">
+        <div class="draw-step-header" onclick="this.parentElement.classList.toggle('open')">
+          <span class="draw-step-num">2</span> CNN vs RNN — Por que CNN é melhor?
+        </div>
+        <div class="draw-step-body">
+          <table class="table-modern" style="font-size:0.72rem;">
+            <tr><th></th><th>RNN</th><th>CNN</th></tr>
+            <tr><td><strong>Como lê</strong></td><td>Palavra por palavra, em fila</td><td style="color:var(--green);">Grupos de palavras, em paralelo</td></tr>
+            <tr><td><strong>Velocidade</strong></td><td style="color:var(--red);">Lenta (sequencial)</td><td style="color:var(--green);">Rápida (paralela)</td></tr>
+            <tr><td><strong>Conexão distante</strong></td><td style="color:var(--red);">O(n) — sofre com distância</td><td>O(log_k n) — melhor, mas ainda precisa empilhar</td></tr>
+            <tr><td><strong>Analogia</strong></td><td>Ler o livro página por página</td><td style="color:var(--green);">Escanear o livro com várias lupas ao mesmo tempo</td></tr>
+          </table>
+          <p style="margin-top:8px;font-size:0.78rem;">A CNN é <strong style="color:var(--green);">muito mais rápida</strong> que a RNN porque processa tudo em paralelo. Mas tem um problema...</p>
+        </div>
+      </div>
+
+      <!-- Step 3: O Problema -->
+      <div class="draw-step">
+        <div class="draw-step-header" onclick="this.parentElement.classList.toggle('open')">
+          <span class="draw-step-num">3</span> O Problema da CNN — Visão de Curto Alcance
+        </div>
+        <div class="draw-step-body">
+          <p style="margin-bottom:10px;">Uma lupa de tamanho 3 <strong style="color:var(--red);">NÃO consegue ver "O" e "peixe" ao mesmo tempo</strong> — eles estão a 4 palavras de distância!</p>
+          <p style="margin-bottom:10px;">A solução é <strong style="color:var(--orange);">empilhar camadas</strong>: a camada 1 vê grupos de 3, a camada 2 vê grupos-dos-grupos (alcance 5), a camada 3 vê grupos-dos-grupos-dos-grupos (alcance 7)...</p>
+          <div style="text-align:center;margin:14px 0;">
+            <svg width="500" height="145">
+              <text x="250" y="14" fill="#6b738a" text-anchor="middle" font-size="9" font-family="Montserrat,sans-serif">Empilhamento de camadas para aumentar o alcance</text>
+              <!-- Camada 1 -->
+              <text x="20" y="42" fill="#6b738a" font-size="8" font-family="Montserrat,sans-serif">Camada 1</text>
+              <circle cx="70" cy="38" r="14" fill="none" stroke="#f59e4b" stroke-width="1.5"/><text x="70" y="41" fill="#f59e4b" text-anchor="middle" font-size="8" font-family="Montserrat,sans-serif">O</text>
+              <circle cx="155" cy="38" r="14" fill="none" stroke="#f59e4b" stroke-width="1.5"/><text x="155" y="41" fill="#f59e4b" text-anchor="middle" font-size="8" font-family="Montserrat,sans-serif">gato</text>
+              <circle cx="240" cy="38" r="14" fill="none" stroke="#f59e4b" stroke-width="1.5"/><text x="240" y="41" fill="#f59e4b" text-anchor="middle" font-size="8" font-family="Montserrat,sans-serif">comeu</text>
+              <circle cx="325" cy="38" r="14" fill="none" stroke="#f59e4b" stroke-width="1.5"/><text x="325" y="41" fill="#f59e4b" text-anchor="middle" font-size="8" font-family="Montserrat,sans-serif">peixe</text>
+              <rect x="55" y="24" width="118" height="28" rx="7" fill="none" stroke="#f59e4b" stroke-width="1.5" opacity="0.6"/>
+              <rect x="140" y="24" width="118" height="28" rx="7" fill="none" stroke="#f59e4b" stroke-width="1.5" opacity="0.6"/>
+              <!-- Camada 2 -->
+              <text x="20" y="80" fill="#6b738a" font-size="8" font-family="Montserrat,sans-serif">Camada 2</text>
+              <circle cx="112" cy="76" r="14" fill="none" stroke="#f59e4b" stroke-width="2"/><text x="112" y="79" fill="#f59e4b" text-anchor="middle" font-size="8" font-family="Montserrat,sans-serif" font-weight="700">O+gato</text>
+              <circle cx="240" cy="76" r="14" fill="none" stroke="#f59e4b" stroke-width="2"/><text x="240" y="79" fill="#f59e4b" text-anchor="middle" font-size="8" font-family="Montserrat,sans-serif" font-weight="700">comeu+peixe</text>
+              <rect x="96" y="62" width="162" height="28" rx="7" fill="none" stroke="#f59e4b" stroke-width="1.5" opacity="0.6"/>
+              <!-- Camada 3 -->
+              <text x="20" y="122" fill="#6b738a" font-size="8" font-family="Montserrat,sans-serif">Camada 3</text>
+              <circle cx="180" cy="118" r="18" fill="none" stroke="#34d399" stroke-width="2.5"/><text x="180" y="121" fill="#34d399" text-anchor="middle" font-size="8" font-family="Montserrat,sans-serif" font-weight="700">TUDO junto!</text>
+              <!-- Setas conectando -->
+              <line x1="112" y1="52" x2="112" y2="62" stroke="#6b738a" stroke-width="0.8" opacity="0.4"/>
+              <line x1="240" y1="52" x2="240" y2="62" stroke="#6b738a" stroke-width="0.8" opacity="0.4"/>
+              <line x1="180" y1="90" x2="180" y2="100" stroke="#6b738a" stroke-width="0.8" opacity="0.4"/>
+            </svg>
+          </div>
+          <p style="font-size:0.78rem;"><strong style="color:var(--orange);">Path length = O(log_k n):</strong> Com kernel k=3 e n=4 palavras, precisa de ⌈log₃(4)⌉ = 2 camadas pra "O" enxergar "peixe". Em uma frase de 100 palavras, precisa de ~5 camadas. <strong style="color:var(--red);">Melhor que RNN [O(n)=100], mas ainda não é O(1).</strong></p>
+        </div>
+      </div>
+
+      <!-- Step 4: Resumo -->
+      <div class="draw-step">
+        <div class="draw-step-header" onclick="this.parentElement.classList.toggle('open')">
+          <span class="draw-step-num">4</span> Resumo: CNN 🆚 Self-Attention
+        </div>
+        <div class="draw-step-body">
+          <table class="table-modern" style="font-size:0.72rem;">
+            <tr><th></th><th style="color:var(--orange);">CNN</th><th style="color:var(--green);">Self-Attention</th></tr>
+            <tr><td><strong>Visão</strong></td><td>Local (janela de k palavras)</td><td style="color:var(--green);">Global (todas as palavras de uma vez)</td></tr>
+            <tr><td><strong>Conexão "O" → "peixe"</strong></td><td style="color:var(--red);">Precisa de 2+ camadas</td><td style="color:var(--green);">Direta! 1 passo = O(1)</td></tr>
+            <tr><td><strong>Paralelismo</strong></td><td style="color:var(--green);">✅ Sim</td><td style="color:var(--green);">✅ Sim</td></tr>
+            <tr><td><strong>Path Length</strong></td><td>O(log_k n)</td><td style="color:var(--green);">O(1) ★</td></tr>
+            <tr><td><strong>Analogia final</strong></td><td>Várias lupas 🔍🔍🔍 que precisam conversar entre si</td><td style="color:var(--green);">Cada palavra grita 📢 e TODAS ouvem ao mesmo tempo</td></tr>
+          </table>
+          <p style="margin-top:10px;font-size:0.82rem;color:var(--accent);font-weight:600;text-align:center;">
+            Self-Attention = CNN com kernel do tamanho da frase INTEIRA. É por isso que ele venceu.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <h4 style="color:var(--text-bright);font-weight:700;margin:24px 0 10px;font-size:0.85rem;">
+      <svg width="14" height="14" stroke="var(--accent)" style="vertical-align:middle;margin-right:6px;"><use href="#ico-scale"/></svg>
+      Guia de Desenho no Tablet · 5 Passos
+    </h4>
+    <p style="font-size:0.72rem;color:var(--text-dim);margin-bottom:12px;">Use a frase <strong style="color:var(--text-bright);">"O gato comeu peixe"</strong> (4 tokens). Clique em cada passo para expandir.</p>
+
+    <div class="draw-step open"><div class="draw-step-header" onclick="this.parentElement.classList.toggle('open')"><span class="draw-step-num">1</span>Desenhar os 4 tokens</div><div class="draw-step-body"><p style="margin-bottom:10px;">Desenhe <strong style="color:var(--text-bright);">4 círculos lado a lado</strong>, cada um com uma palavra dentro.</p><div style="display:flex;gap:16px;justify-content:center;margin:14px 0;"><svg width="400" height="80"><circle cx="50" cy="40" r="22" fill="none" stroke="#4d8af0" stroke-width="2"/><text x="50" y="44" fill="#6da8ff" text-anchor="middle" font-size="12" font-family="Montserrat,sans-serif" font-weight="600">O</text><circle cx="150" cy="40" r="22" fill="none" stroke="#4d8af0" stroke-width="2"/><text x="150" y="44" fill="#6da8ff" text-anchor="middle" font-size="12" font-family="Montserrat,sans-serif" font-weight="600">gato</text><circle cx="250" cy="40" r="22" fill="none" stroke="#4d8af0" stroke-width="2"/><text x="250" y="44" fill="#6da8ff" text-anchor="middle" font-size="12" font-family="Montserrat,sans-serif" font-weight="600">comeu</text><circle cx="350" cy="40" r="22" fill="none" stroke="#4d8af0" stroke-width="2"/><text x="350" y="44" fill="#6da8ff" text-anchor="middle" font-size="12" font-family="Montserrat,sans-serif" font-weight="600">peixe</text></svg></div></div></div>
+
+    <div class="draw-step"><div class="draw-step-header" onclick="this.parentElement.classList.toggle('open')"><span class="draw-step-num">2</span>RNN — Fluxo Sequencial (setas vermelhas)</div><div class="draw-step-body"><p style="margin-bottom:8px;">Conecte os círculos com <strong style="color:var(--red);">setas vermelhas da esquerda para a direita</strong>. "peixe" NÃO se conecta de volta a "gato".</p><p style="margin-bottom:8px;font-size:0.8rem;">Anote: distância "gato" → "peixe" = <strong style="color:var(--red);">2 passos = O(n)</strong></p><div style="text-align:center;"><svg width="400" height="65"><circle cx="50" cy="28" r="18" fill="none" stroke="#f87171" stroke-width="1.5"/><text x="50" y="32" fill="#f87171" text-anchor="middle" font-size="10" font-family="Montserrat,sans-serif" font-weight="600">O</text><circle cx="150" cy="28" r="18" fill="none" stroke="#f87171" stroke-width="1.5"/><text x="150" y="32" fill="#f87171" text-anchor="middle" font-size="10" font-family="Montserrat,sans-serif" font-weight="600">gato</text><circle cx="250" cy="28" r="18" fill="none" stroke="#f87171" stroke-width="1.5"/><text x="250" y="32" fill="#f87171" text-anchor="middle" font-size="10" font-family="Montserrat,sans-serif" font-weight="600">comeu</text><circle cx="350" cy="28" r="18" fill="none" stroke="#f87171" stroke-width="1.5"/><text x="350" y="32" fill="#f87171" text-anchor="middle" font-size="10" font-family="Montserrat,sans-serif" font-weight="600">peixe</text><line x1="68" y1="28" x2="130" y2="28" stroke="#f87171" stroke-width="1.5" marker-end="url(#ar)"/><line x1="168" y1="28" x2="230" y2="28" stroke="#f87171" stroke-width="1.5" marker-end="url(#ar)"/><line x1="268" y1="28" x2="330" y2="28" stroke="#f87171" stroke-width="1.5" marker-end="url(#ar)"/><text x="200" y="58" fill="#f87171" text-anchor="middle" font-size="9" font-family="Montserrat,sans-serif" font-weight="600">Distância "gato"→"peixe" = 2 passos</text><defs><marker id="ar"><path d="M0,0 L5,2.5 L0,5" fill="#f87171"/></marker></defs></svg></div></div></div>
+
+    <div class="draw-step"><div class="draw-step-header" onclick="this.parentElement.classList.toggle('open')"><span class="draw-step-num">3</span>CNN — Conexões Locais (retângulos laranja)</div><div class="draw-step-body"><p style="margin-bottom:8px;">Desenhe <strong style="color:var(--orange);">retângulos sobrepostos</strong> agrupando palavras vizinhas. "peixe" não alcança "O" diretamente — precisa de camadas empilhadas.</p><p style="font-size:0.8rem;">Path length = <strong style="color:var(--orange);">O(log_k n)</strong></p><div style="text-align:center;margin:10px 0;"><svg width="400" height="55"><circle cx="50" cy="22" r="17" fill="none" stroke="#f59e4b" stroke-width="1.5"/><text x="50" y="26" fill="#f59e4b" text-anchor="middle" font-size="10" font-family="Montserrat,sans-serif" font-weight="600">O</text><circle cx="140" cy="22" r="17" fill="none" stroke="#f59e4b" stroke-width="1.5"/><text x="140" y="26" fill="#f59e4b" text-anchor="middle" font-size="10" font-family="Montserrat,sans-serif" font-weight="600">gato</text><circle cx="230" cy="22" r="17" fill="none" stroke="#f59e4b" stroke-width="1.5"/><text x="230" y="26" fill="#f59e4b" text-anchor="middle" font-size="10" font-family="Montserrat,sans-serif" font-weight="600">comeu</text><circle cx="320" cy="22" r="17" fill="none" stroke="#f59e4b" stroke-width="1.5"/><text x="320" y="26" fill="#f59e4b" text-anchor="middle" font-size="10" font-family="Montserrat,sans-serif" font-weight="600">peixe</text><rect x="30" y="3" width="132" height="38" rx="8" fill="none" stroke="#f59e4b" stroke-width="1.5" opacity="0.5"/><rect x="120" y="3" width="132" height="38" rx="8" fill="none" stroke="#f59e4b" stroke-width="1.5" opacity="0.5"/><rect x="210" y="3" width="130" height="38" rx="8" fill="none" stroke="#f59e4b" stroke-width="1.5" opacity="0.5"/></svg></div></div></div>
+
+    <div class="draw-step"><div class="draw-step-header" onclick="this.parentElement.classList.toggle('open')"><span class="draw-step-num">4</span>Self-Attention — Conexões Totais (setas verdes)</div><div class="draw-step-body"><p style="margin-bottom:8px;">Desenhe <strong style="color:var(--green);">setas verdes bidirecionais</strong> de CADA círculo para TODOS os outros. "peixe" se conecta DIRETAMENTE a "O".</p><p style="font-size:0.8rem;">Anote: distância "gato" → "peixe" = <strong style="color:var(--green);">1 passo = O(1)</strong></p><div style="text-align:center;margin:10px 0;"><svg width="400" height="85"><circle cx="50" cy="45" r="20" fill="none" stroke="#34d399" stroke-width="2"/><text x="50" y="49" fill="#34d399" text-anchor="middle" font-size="11" font-family="Montserrat,sans-serif" font-weight="600">O</text><circle cx="150" cy="45" r="20" fill="none" stroke="#34d399" stroke-width="2"/><text x="150" y="49" fill="#34d399" text-anchor="middle" font-size="11" font-family="Montserrat,sans-serif" font-weight="600">gato</text><circle cx="250" cy="45" r="20" fill="none" stroke="#34d399" stroke-width="2"/><text x="250" y="49" fill="#34d399" text-anchor="middle" font-size="11" font-family="Montserrat,sans-serif" font-weight="600">comeu</text><circle cx="350" cy="45" r="20" fill="none" stroke="#34d399" stroke-width="2"/><text x="350" y="49" fill="#34d399" text-anchor="middle" font-size="11" font-family="Montserrat,sans-serif" font-weight="600">peixe</text><line x1="70" y1="40" x2="130" y2="40" stroke="#34d399" stroke-width="1.2" opacity="0.5"/><line x1="170" y1="40" x2="230" y2="40" stroke="#34d399" stroke-width="1.2" opacity="0.5"/><line x1="270" y1="40" x2="330" y2="40" stroke="#34d399" stroke-width="1.2" opacity="0.5"/><line x1="70" y1="55" x2="330" y2="55" stroke="#34d399" stroke-width="0.8" opacity="0.2"/><text x="200" y="80" fill="#34d399" text-anchor="middle" font-size="10" font-family="Montserrat,sans-serif" font-weight="700">Distância O(1) — Conexão Direta</text></svg></div></div></div>
+
+    <div class="draw-step"><div class="draw-step-header" onclick="this.parentElement.classList.toggle('open')"><span class="draw-step-num">5</span>Comparar os 3 lado a lado + conclusão</div><div class="draw-step-body"><p>Desenhe os 3 modelos <strong>um abaixo do outro</strong>. Ao lado de cada um, anote: Complexidade, Path Length, Paralelizável?</p><p style="margin-top:8px;color:var(--green);font-weight:600;">Circule o Self-Attention e escreva: <strong>"O(1) + paralelizável = ESCOLHIDO"</strong></p></div></div>
+  </div>
+
+  <!-- ============================================================
+       BLOCO 2 — QUERY, KEY, VALUE (5 min)
+       ============================================================ -->
+  <div class="section-page" id="bloco2">
+    <div class="back-bar">
+      <button class="btn-back" onclick="showHome()">
+        <svg><use href="#ico-chevron-left"/></svg>
+        Voltar para Home
+      </button>
+      <span class="section-breadcrumb">Bloco 2 de 8 · 5 minutos</span>
+    </div>
+
+    <h2><span class="section-icon"><svg width="18" height="18" stroke="var(--accent)"><use href="#ico-search"/></svg></span> Intuição: Query, Key, Value</h2>
+    <p class="subtitle">5 min · Um mecanismo de busca diferenciável</p>
+
+    <div class="card accent-left">
+      <h4 style="color:var(--text-bright);font-weight:700;margin-bottom:8px;font-size:0.88rem;">Analogia — YouTube</h4>
+      <table class="table-modern">
+        <tr><th>Componente</th><th>Pergunta</th><th>Exemplo</th></tr>
+        <tr><td style="color:var(--accent);font-weight:700;">Query (Q)</td><td>"O que procuro?"</td><td>Busca: "receita de bolo"</td></tr>
+        <tr><td style="color:var(--green);font-weight:700;">Key (K)</td><td>"O que ofereço?"</td><td>Título/descrição de cada vídeo</td></tr>
+        <tr><td style="color:var(--orange);font-weight:700;">Value (V)</td><td>"Qual o conteúdo?"</td><td>O vídeo em si</td></tr>
+      </table>
+    </div>
+
+    <div class="card" style="border:1px solid var(--border-strong);">
+      <h4 style="color:var(--text-bright);font-weight:700;margin-bottom:8px;font-size:0.88rem;">Exemplo concreto: "O gato comeu peixe"</h4>
+      <p style="font-size:0.85rem;">Para a palavra <strong style="color:var(--accent);">"comeu"</strong>:</p>
+      <ul style="margin:10px 0 0 20px;font-size:0.82rem;color:var(--text-dim);">
+        <li>Q<sub style="color:var(--accent);">comeu</sub> pergunta: "quem fez a ação? o que foi comido?"</li>
+        <li>K<sub style="color:var(--green);">gato</sub> = "sujeito da frase" → score alto (0.45)</li>
+        <li>K<sub style="color:var(--green);">peixe</sub> = "objeto da frase" → score médio (0.28)</li>
+        <li>K<sub style="color:var(--green);">O</sub> = "artigo" → score baixo (0.10)</li>
+      </ul>
+      <p style="margin-top:12px;font-size:0.82rem;color:var(--accent);font-weight:600;text-align:center;">
+        Output<sub>comeu</sub> = 0.45·V<sub>gato</sub> + 0.28·V<sub>peixe</sub> + 0.17·V<sub>comeu</sub> + 0.10·V<sub>O</sub>
+      </p>
+    </div>
+
+    <div class="highlight-box">
+      <p style="color:var(--text-bright);font-weight:600;margin-bottom:6px;">A Equação</p>
+      <p class="big-eq">Attention(Q, K, V) = softmax( Q × Kᵀ / √d<sub>k</sub> ) × V</p>
+      <table style="margin:12px auto 0;font-size:0.78rem;color:var(--text-dim);text-align:left;">
+        <tr><td style="padding:3px 8px;"><strong style="color:var(--accent);">Q × Kᵀ</strong></td><td>→ matriz de scores: quanto cada query combina com cada key</td></tr>
+        <tr><td style="padding:3px 8px;"><strong style="color:var(--green);">/ √d<sub>k</sub></strong></td><td>→ escala para evitar gradientes muito pequenos</td></tr>
+        <tr><td style="padding:3px 8px;"><strong style="color:var(--orange);">softmax()</strong></td><td>→ transforma scores em probabilidades (soma = 1 por linha)</td></tr>
+        <tr><td style="padding:3px 8px;"><strong style="color:var(--purple);">× V</strong></td><td>→ soma ponderada dos values = output contextualizado</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       BLOCO 3 — SCALED DOT-PRODUCT ATTENTION (6 min)
+       ============================================================ -->
+  <div class="section-page" id="bloco3">
+    <div class="back-bar">
+      <button class="btn-back" onclick="showHome()">
+        <svg><use href="#ico-chevron-left"/></svg>
+        Voltar para Home
+      </button>
+      <span class="section-breadcrumb">Bloco 3 de 8 · 6 minutos</span>
+    </div>
+
+    <h2><span class="section-icon"><svg width="18" height="18" stroke="var(--accent)"><use href="#ico-scale"/></svg></span> Scaled Dot-Product Attention</h2>
+    <p class="subtitle">6 min · Visualização interativa da equação, passo a passo</p>
+
+    <div class="card" style="border:1px solid var(--border-strong);">
+      <h4 style="color:var(--text-bright);font-weight:700;margin-bottom:4px;font-size:0.88rem;">Grafo de Atenção — "O gato comeu peixe"</h4>
+      <p style="font-size:0.7rem;color:var(--text-dim);margin-bottom:2px;">
+        <strong>Cada círculo</strong> = 1 palavra (token).
+        <strong>Cada linha</strong> = quanto a palavra A presta atenção na B.
+        <strong style="color:var(--accent);">Linha grossa e brilhante</strong> = atenção forte (ex: 0.42).
+        <strong style="color:var(--text-dim);">Linha fina e apagada</strong> = atenção fraca (ex: 0.12).
+      </p>
+      <p style="font-size:0.68rem;color:var(--text-dim);margin-bottom:8px;">
+        Arraste as palavras para desembaralhar a visualização. As linhas <strong>não mudam</strong> — os pesos de atenção são fixos (vieram do softmax). Mover só reorganiza o layout.
+      </p>
+      <div class="word-graph"><canvas id="wordCanvas" width="700" height="380"></canvas></div>
+      <div style="display:flex;gap:20px;justify-content:center;align-items:center;margin-top:10px;flex-wrap:wrap;">
+        <span style="display:flex;align-items:center;gap:5px;font-size:0.65rem;color:var(--text-dim);">
+          <span style="width:24px;height:8px;border-radius:4px;background:var(--accent);box-shadow:0 0 8px var(--accent-glow);"></span> Atenção forte (0.35–0.42)
+        </span>
+        <span style="display:flex;align-items:center;gap:5px;font-size:0.65rem;color:var(--text-dim);">
+          <span style="width:14px;height:3px;border-radius:2px;background:rgba(77,138,240,0.4);"></span> Atenção média (0.25–0.28)
+        </span>
+        <span style="display:flex;align-items:center;gap:5px;font-size:0.65rem;color:var(--text-dim);">
+          <span style="width:6px;height:1.5px;border-radius:1px;background:rgba(77,138,240,0.2);"></span> Atenção fraca (0.10–0.18)
+        </span>
+        <span class="btn" onclick="resetWordGraph()" style="font-size:0.65rem;padding:6px 12px;">
+          <svg width="12" height="12"><use href="#ico-arrow"/></svg> Resetar Posições
+        </span>
+      </div>
+      <div id="wordHoverInfo" style="text-align:center;margin-top:8px;font-size:0.72rem;color:var(--text-dim);min-height:20px;"></div>
+    </div>
+
+    <h4 style="color:var(--text-bright);font-weight:700;margin:24px 0 10px;font-size:0.85rem;">A Fórmula — Etapa por Etapa</h4>
+    <p style="font-size:0.7rem;color:var(--text-dim);margin-bottom:10px;">Clique em cada etapa para ver as matrizes com a frase "O gato comeu peixe"</p>
+
+    <div class="eq-walkthrough">
+      <div class="eq-step-walk active" onclick="showEqDetail(0)" id="eqBtn0"><div class="eq-num">MatMul</div><div class="eq-title">Q × K<sup>T</sup></div><div class="eq-dim">Scores [4×4]</div></div>
+      <div class="eq-step-walk" onclick="showEqDetail(1)" id="eqBtn1"><div class="eq-num">Scale</div><div class="eq-title">÷ √d<sub>k</sub></div><div class="eq-dim">Normaliza</div></div>
+      <div class="eq-step-walk" onclick="showEqDetail(2)" id="eqBtn2"><div class="eq-num">Softmax</div><div class="eq-title">por linha</div><div class="eq-dim">Pesos Σ=1</div></div>
+      <div class="eq-step-walk" onclick="showEqDetail(3)" id="eqBtn3"><div class="eq-num">MatMul</div><div class="eq-title">Pesos × V</div><div class="eq-dim">Output</div></div>
+    </div>
+
+    <div class="eq-detail show" id="eqDetail0"><h4>Q × K<sup>T</sup> — Matriz de Scores</h4><p style="font-size:0.82rem;color:var(--text-dim);">Q<sub>i</sub> × K<sub>j</sub> mede <strong style="color:var(--text-bright);">quanto a palavra i presta atenção na palavra j</strong>.</p><div style="overflow-x:auto;margin:10px 0;"><table class="table-modern" style="font-size:0.72rem;"><tr><th></th><th>O</th><th>gato</th><th>comeu</th><th>peixe</th></tr><tr><td><strong>O</strong></td><td>8.2</td><td>5.1</td><td>-2.3</td><td>-1.0</td></tr><tr><td><strong>gato</strong></td><td>5.1</td><td style="color:var(--green);">12.4</td><td style="color:var(--accent);">6.8</td><td>2.1</td></tr><tr><td><strong>comeu</strong></td><td>-2.3</td><td style="color:var(--accent);">6.8</td><td>10.5</td><td style="color:var(--orange);">7.9</td></tr><tr><td><strong>peixe</strong></td><td>-1.0</td><td>2.1</td><td style="color:var(--orange);">7.9</td><td>11.2</td></tr></table></div><p style="font-size:0.68rem;color:var(--text-dim);">gato↔comeu (6.8) relação forte · comeu↔peixe (7.9) relação forte · diagonal = atenção em si mesmo</p></div>
+
+    <div class="eq-detail" id="eqDetail1"><h4>Scale — Dividir por √d<sub>k</sub></h4><p style="font-size:0.82rem;color:var(--text-dim);">Cada score ÷ <strong style="color:var(--text-bright);">√64 = 8</strong>. Normaliza a variância para 1.</p><div style="overflow-x:auto;margin:10px 0;"><table class="table-modern" style="font-size:0.72rem;"><tr><th></th><th>O</th><th>gato</th><th>comeu</th><th>peixe</th></tr><tr><td><strong>O</strong></td><td>1.03</td><td>0.64</td><td>-0.29</td><td>-0.13</td></tr><tr><td><strong>gato</strong></td><td>0.64</td><td>1.55</td><td>0.85</td><td>0.26</td></tr><tr><td><strong>comeu</strong></td><td>-0.29</td><td>0.85</td><td>1.31</td><td>0.99</td></tr><tr><td><strong>peixe</strong></td><td>-0.13</td><td>0.26</td><td>0.99</td><td>1.40</td></tr></table></div></div>
+
+    <div class="eq-detail" id="eqDetail2"><h4>Softmax — Transformar em Probabilidades</h4><p style="font-size:0.82rem;color:var(--text-dim);">Cada linha vira distribuição de probabilidade. <strong style="color:var(--text-bright);">Cada linha soma exatamente 1.0.</strong></p><div style="overflow-x:auto;margin:10px 0;"><table class="table-modern" style="font-size:0.72rem;"><tr><th></th><th>O</th><th>gato</th><th>comeu</th><th>peixe</th><th>Σ</th></tr><tr><td><strong>O</strong></td><td style="color:var(--green);">0.42</td><td>0.28</td><td>0.18</td><td>0.12</td><td style="color:var(--accent);">1.0</td></tr><tr><td><strong>gato</strong></td><td>0.18</td><td style="color:var(--green);">0.42</td><td>0.28</td><td>0.12</td><td style="color:var(--accent);">1.0</td></tr><tr><td><strong>comeu</strong></td><td>0.12</td><td>0.28</td><td style="color:var(--green);">0.35</td><td>0.25</td><td style="color:var(--accent);">1.0</td></tr><tr><td><strong>peixe</strong></td><td>0.12</td><td>0.18</td><td>0.28</td><td style="color:var(--green);">0.42</td><td style="color:var(--accent);">1.0</td></tr></table></div><p style="font-size:0.68rem;color:var(--text-dim);">Linha "comeu": 35% em si mesmo, 28% em "gato", 25% em "peixe"</p></div>
+
+    <div class="eq-detail" id="eqDetail3"><h4>Pesos × V — Output Contextualizado</h4><p style="font-size:0.82rem;color:var(--text-dim);">A matriz de pesos multiplica V. Cada palavra recebe uma <strong style="color:var(--text-bright);">mistura ponderada</strong> dos Values de TODAS as outras.</p><p style="margin-top:10px;font-size:0.85rem;color:var(--accent);font-weight:600;text-align:center;">Output<sub>comeu</sub> = 0.12·V<sub>O</sub> + 0.28·V<sub>gato</sub> + 0.35·V<sub>comeu</sub> + 0.25·V<sub>peixe</sub></p><p style="font-size:0.7rem;color:var(--text-dim);margin-top:4px;text-align:center;">Isto é o CORAÇÃO do attention: informação contextual fluindo entre palavras em 1 operação.</p></div>
+
+    <div class="card orange-left" style="margin-top:18px;">
+      <h4 style="color:var(--orange);font-weight:700;margin-bottom:8px;font-size:0.88rem;">Por que dividir por √d<sub>k</sub>?</h4>
+      <table class="table-modern">
+        <tr><th>d<sub>k</sub></th><th>σ do dot product</th><th>Valores</th><th>Efeito no Softmax</th></tr>
+        <tr><td>1</td><td>1</td><td>-3 a +3</td><td style="color:var(--green);font-weight:600;">Suave</td></tr>
+        <tr><td>64</td><td>8</td><td>-24 a +24</td><td style="color:var(--orange);font-weight:600;">Começa a saturar</td></tr>
+        <tr class="row-worst"><td>512</td><td>22.6</td><td>-68 a +68</td><td style="color:var(--red);font-weight:600;">Softmax trava, gradiente ≈ 0</td></tr>
+        <tr class="row-best"><td colspan="4"><strong>Solução: (q·k) / √d<sub>k</sub></strong> — variância = 1 independente da dimensão. O softmax sempre funciona.</td></tr>
+      </table>
+      <p style="font-size:0.68rem;color:var(--text-dim);margin-top:6px;">Prova: Se q<sub>i</sub>, k<sub>i</sub> ~ N(0,1) independentes → Var(q·k) = d<sub>k</sub> → dividir por √d<sub>k</sub> normaliza Var = 1</p>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       BLOCO 4 — MULTI-HEAD ATTENTION (8 min)
+       ============================================================ -->
+  <div class="section-page" id="bloco4">
+    <div class="back-bar">
+      <button class="btn-back" onclick="showHome()">
+        <svg><use href="#ico-chevron-left"/></svg>
+        Voltar para Home
+      </button>
+      <span class="section-breadcrumb">Bloco 4 de 8 ★ · 8 minutos</span>
+    </div>
+
+    <h2><span class="section-icon"><svg width="18" height="18" stroke="var(--accent)"><use href="#ico-brain"/></svg></span> Multi-Head Attention</h2>
+    <p class="subtitle">8 min · Por que 8 cabeças pensam melhor que 1</p>
+
+    <div class="card accent-left">
+      <h4 style="color:var(--text-bright);font-weight:700;margin-bottom:8px;font-size:0.88rem;">Single-Head vs Multi-Head</h4>
+      <p style="font-size:0.83rem;"><strong style="color:var(--red);">Single-Head (h=1):</strong> 1 conjunto de atenção captura TUDO de uma vez. O <em>averaging</em> embaralha padrões de sintaxe, semântica e correferência.</p>
+      <p style="font-size:0.83rem;margin-top:8px;"><strong style="color:var(--green);">Multi-Head (h=8):</strong> Cada head aprende uma perspectiva diferente com suas PRÓPRIAS matrizes W<sup>Q</sup>, W<sup>K</sup>, W<sup>V</sup>. Resultados concatenados e combinados por W<sup>O</sup>.</p>
+    </div>
+
+    <h4 style="color:var(--text-bright);font-weight:700;margin:24px 0 10px;font-size:0.85rem;">Guia de Desenho — Single vs Multi</h4>
+
+    <div class="draw-step open"><div class="draw-step-header" onclick="this.parentElement.classList.toggle('open')"><span class="draw-step-num">1</span>Single-Head (lado esquerdo do tablet)</div><div class="draw-step-body"><ol style="margin:0 0 0 18px;font-size:0.82rem;"><li>3 retângulos: <strong style="color:var(--text-bright);">Q [4×512], K [4×512], V [4×512]</strong></li><li>1 bloco: <strong style="color:var(--text-bright);">Scaled Dot-Product Attention</strong></li><li>Setas Q,K,V → bloco → Output <strong style="color:var(--text-bright);">[4×512]</strong></li><li>Abaixo: <strong style="color:var(--red);">BLEU: 24.9</strong> (pior resultado)</li></ol></div></div>
+
+    <div class="draw-step"><div class="draw-step-header" onclick="this.parentElement.classList.toggle('open')"><span class="draw-step-num">2</span>Multi-Head (lado direito) — 4 etapas</div><div class="draw-step-body"><ol style="margin:0 0 0 18px;font-size:0.82rem;"><li><strong style="color:var(--accent);">Projeções:</strong> 8× W<sup>Q</sup>,W<sup>K</sup>,W<sup>V</sup> [512→64]. Anote: "8×64=512"</li><li><strong style="color:var(--accent);">Atenção:</strong> 8 blocos em paralelo, cada head → [4×64]</li><li><strong style="color:var(--accent);">Concat:</strong> Juntar 8 outputs [4×512]. Anote: "8×64=512=d<sub>model</sub>"</li><li><strong style="color:var(--accent);">W<sup>O</sup>:</strong> Projeção final [512×512]. Output [4×512]</li></ol></div></div>
+
+    <div class="draw-step"><div class="draw-step-header" onclick="this.parentElement.classList.toggle('open')"><span class="draw-step-num">3</span>Comparação final — mesmo custo, qualidade superior</div><div class="draw-step-body"><table class="table-modern"><tr><th></th><th>d<sub>k</sub></th><th>Custo</th><th>BLEU</th></tr><tr class="row-worst"><td>Single-Head</td><td>512</td><td>O(n²·512)</td><td>24.9</td></tr><tr class="row-best"><td>Multi-Head (h=8)</td><td>64</td><td>8×O(n²·64)=O(n²·512)</td><td>25.8</td></tr></table><p style="margin-top:8px;color:var(--green);font-weight:600;font-size:0.82rem;">Mesmo custo, MUITO melhor qualidade.</p></div></div>
+
+    <p style="text-align:center;font-size:0.9rem;color:var(--accent);font-weight:600;margin:16px 0;">MultiHead(Q, K, V) = Concat(head<sub>1</sub>, ..., head<sub>h</sub>) × W<sup>O</sup></p>
+  </div>
+
+  <!-- ============================================================
+       BLOCO 5 — BLEU LAB (4 min)
+       ============================================================ -->
+  <div class="section-page" id="bloco5">
+    <div class="back-bar">
+      <button class="btn-back" onclick="showHome()">
+        <svg><use href="#ico-chevron-left"/></svg>
+        Voltar para Home
+      </button>
+      <span class="section-breadcrumb">Bloco 5 de 8 · 4 minutos</span>
+    </div>
+
+    <h2><span class="section-icon"><svg width="18" height="18" stroke="var(--accent)"><use href="#ico-bar-chart"/></svg></span> BLEU Lab · Evidência Experimental</h2>
+    <p class="subtitle">4 min · Simulador interativo com gráfico de linha</p>
+
+    <div class="bleu-lab">
+      <h4 style="color:var(--accent);font-weight:700;font-size:0.88rem;margin-bottom:4px;">Simulador BLEU — Tabela 3 do Paper</h4>
+      <p style="font-size:0.68rem;color:var(--text-dim);margin-bottom:12px;">Curva baseada nos dados reais. Arraste os controles.</p>
+
+      <div class="bleu-controls-neon">
+        <div class="bleu-control-group"><label>Heads (h)</label><input type="range" id="bleuH" min="1" max="32" value="8" step="1" oninput="updateBleuLine()"><span class="bleu-val" id="bleuHVal">8</span></div>
+        <div class="bleu-control-group"><label>d<sub>k</sub> por head</label><input type="range" id="bleuDk" min="8" max="512" value="64" step="8" oninput="updateBleuLine()"><span class="bleu-val" id="bleuDkVal">64</span></div>
+        <div class="bleu-control-group"><label>d<sub>model</sub></label><span class="bleu-val" id="bleuDmodelVal" style="color:var(--cyan);">512</span></div>
+        <div class="bleu-control-group" style="margin-left:auto;text-align:center;"><label>BLEU Estimado</label><span class="bleu-big-score" id="bleuBigScore">25.8</span></div>
+      </div>
+
+      <div class="bleu-chart-area"><canvas id="bleuCanvas" width="880" height="260"></canvas></div>
+      <div style="display:flex;gap:20px;justify-content:center;margin-top:10px;font-size:0.65rem;color:var(--text-dim);">
+        <span style="display:flex;align-items:center;gap:5px;"><span style="width:16px;height:2px;background:var(--accent);box-shadow:0 0 6px var(--accent-glow);"></span> Curva BLEU</span>
+        <span style="display:flex;align-items:center;gap:5px;"><span style="width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 8px rgba(52,211,153,0.5);"></span> Sua config.</span>
+        <span>Sweet spot: h=8, d<sub>k</sub>=64</span>
+      </div>
+
+      <div class="card" style="margin-top:12px;background:var(--accent-soft);border-color:rgba(77,138,240,0.25);padding:14px 18px;">
+        <p style="font-size:0.78rem;color:var(--accent);font-weight:500;" id="bleuInsight">h=8, d<sub>k</sub>=64: Sweet spot. Melhor equilíbrio entre múltiplas perspectivas e dimensionalidade suficiente por head.</p>
+      </div>
+    </div>
+
+    <h4 style="color:var(--text-bright);font-weight:700;margin:20px 0 8px;font-size:0.85rem;">Tabela 3 · Dados Reais (EN→DE, newstest2013)</h4>
+    <div style="overflow-x:auto;"><table class="table-modern">
+      <tr><th>h</th><th>d<sub>k</sub></th><th>d<sub>model</sub></th><th>BLEU</th><th>PPL</th><th>Interpretação</th></tr>
+      <tr class="row-worst"><td>1</td><td>512</td><td>512</td><td>24.9</td><td>5.29</td><td>Averaging embaralha padrões</td></tr>
+      <tr><td>4</td><td>128</td><td>512</td><td>25.5</td><td>5.00</td><td>Melhor, mas subótimo</td></tr>
+      <tr class="row-best"><td>8</td><td>64</td><td>512</td><td>25.8</td><td>4.92</td><td>Sweet spot</td></tr>
+      <tr><td>16</td><td>32</td><td>512</td><td>25.8</td><td>4.91</td><td>Empata com h=8</td></tr>
+      <tr class="row-worst"><td>32</td><td>16</td><td>512</td><td>25.4</td><td>5.01</td><td>d<sub>k</sub>=16 pequeno demais</td></tr>
+    </table></div>
+    <p style="font-size:0.62rem;color:var(--text-dim);margin-top:4px;">Modelo base: N=6, d<sub>model</sub>=512, d<sub>ff</sub>=2048, P<sub>drop</sub>=0.1, ε<sub>ls</sub>=0.1 · 65M parâmetros</p>
+  </div>
+
+  <!-- ============================================================
+       BLOCO 6 — 3 TIPOS DE ATENÇÃO (4 min)
+       ============================================================ -->
+  <div class="section-page" id="bloco6">
+    <div class="back-bar">
+      <button class="btn-back" onclick="showHome()">
+        <svg><use href="#ico-chevron-left"/></svg>
+        Voltar para Home
+      </button>
+      <span class="section-breadcrumb">Bloco 6 de 8 · 4 minutos</span>
+    </div>
+
+    <h2><span class="section-icon"><svg width="18" height="18" stroke="var(--accent)"><use href="#ico-lock"/></svg></span> Os 3 Tipos de Atenção</h2>
+    <p class="subtitle">4 min · Onde cada tipo aparece e qual sua função</p>
+
+    <div class="card green-left">
+      <h4 style="color:var(--text-bright);font-weight:700;margin-bottom:6px;font-size:0.88rem;">1. Self-Attention (Encoder)</h4>
+      <p style="font-size:0.82rem;">Q, K, V vêm do <strong>encoder</strong>. Cada palavra atende TODAS as outras. <strong>Bidirecional.</strong></p>
+      <p style="font-size:0.7rem;color:var(--text-dim);">"O banco fica na praça" — contexto completo desambigua "banco".</p>
+    </div>
+
+    <div class="card orange-left">
+      <h4 style="color:var(--text-bright);font-weight:700;margin-bottom:6px;font-size:0.88rem;">2. Masked Self-Attention (Decoder)</h4>
+      <p style="font-size:0.82rem;">Q, K, V vêm do <strong>decoder</strong>. Máscara triangular = -∞ impede ver tokens futuros. <strong>Autoregressivo.</strong></p>
+      <p style="font-size:0.7rem;color:var(--text-dim);">Posição i só vê posições 0..i. Sem isso, o modelo "trapacearia".</p>
+    </div>
+
+    <div class="card purple-left">
+      <h4 style="color:var(--text-bright);font-weight:700;margin-bottom:6px;font-size:0.88rem;">3. Cross-Attention (Encoder → Decoder)</h4>
+      <p style="font-size:0.82rem;"><strong>Q do decoder. K, V do encoder.</strong> A ponte entre input e output.</p>
+      <p style="font-size:0.7rem;color:var(--text-dim);">Encoder = entender o inglês. Decoder = escrever em alemão. Cross = a cada palavra alemã, consultar o inglês.</p>
+    </div>
+
+    <div class="highlight-box">
+      <p style="color:var(--text-bright);font-weight:600;margin-bottom:6px;">🎯 Analogia:</p>
+      <p style="font-size:0.85rem;">
+        <strong>Encoder</strong> = ler e entender o texto em inglês<br>
+        <strong>Decoder</strong> = escrever a tradução em alemão<br>
+        <strong>Cross-Attention</strong> = a cada palavra alemã gerada, consultar o entendimento do inglês<br>
+        <strong style="color:var(--red);">Sem isso, o decoder não teria acesso à frase original!</strong>
+      </p>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       BLOCO 7 — TRANSFORMER COMPLETO (3 min)
+       ============================================================ -->
+  <div class="section-page" id="bloco7">
+    <div class="back-bar">
+      <button class="btn-back" onclick="showHome()">
+        <svg><use href="#ico-chevron-left"/></svg>
+        Voltar para Home
+      </button>
+      <span class="section-breadcrumb">Bloco 7 de 8 · 3 minutos</span>
+    </div>
+
+    <h2><span class="section-icon"><svg width="18" height="18" stroke="var(--accent)"><use href="#ico-box"/></svg></span> O Transformer Completo</h2>
+    <p class="subtitle">3 min · Revisão da arquitetura (Figura 1 do paper)</p>
+
+    <div class="img-display">
+      <p style="color:var(--text-bright);font-weight:600;margin-bottom:10px;font-size:0.9rem;">Abra a imagem oficial da estrutura do Transformer</p>
+      <p style="font-size:0.78rem;color:var(--text-dim);margin-bottom:16px;">Use como referência visual enquanto explica: Encoder (esquerda) → Decoder (direita) → MHA em 3 lugares → FFN → Add & Norm.</p>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+        <a href="https://arxiv.org/pdf/1706.03762.pdf" target="_blank" class="btn">
+          <svg width="15" height="15"><use href="#ico-globe"/></svg> Paper Original (PDF)
+        </a>
+        <a href="https://arxiv.org/abs/1706.03762" target="_blank" class="btn">
+          <svg width="15" height="15"><use href="#ico-globe"/></svg> arXiv
+        </a>
+      </div>
+    </div>
+
+    <div class="card" style="border:1px solid var(--border-strong);">
+      <h4 style="color:var(--text-bright);font-weight:700;margin-bottom:8px;font-size:0.85rem;">Roteiro de Revisão</h4>
+      <ol style="margin:8px 0 0 18px;font-size:0.82rem;color:var(--text-dim);">
+        <li><strong style="color:var(--text-bright);">Input:</strong> Tokens → Embedding + Positional Encoding → Encoder ×6</li>
+        <li><strong style="color:var(--text-bright);">Encoder Layer:</strong> Multi-Head Self-Attention → Add & Norm → FFN → Add & Norm</li>
+        <li><strong style="color:var(--text-bright);">Decoder Layer:</strong> Masked MHA → Add & Norm → <span style="color:var(--accent);font-weight:600;">Cross-Attention</span> → Add & Norm → FFN → Add & Norm</li>
+        <li><strong style="color:var(--text-bright);">Output:</strong> Linear → Softmax → Próximo token</li>
+        <li><strong style="color:var(--text-bright);">Conexões residuais:</strong> Todos os sub-blocos têm skip connections + Layer Normalization</li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       BLOCO 8 — VARIANTES MODERNAS (4 min)
+       ============================================================ -->
+  <div class="section-page" id="bloco8">
+    <div class="back-bar">
+      <button class="btn-back" onclick="showHome()">
+        <svg><use href="#ico-chevron-left"/></svg>
+        Voltar para Home
+      </button>
+      <span class="section-breadcrumb">Bloco 8 de 8 · 4 minutos</span>
+    </div>
+
+    <h2><span class="section-icon"><svg width="18" height="18" stroke="var(--accent)"><use href="#ico-flash"/></svg></span> Variantes Modernas</h2>
+    <p class="subtitle">4 min · Linha do tempo + Flash Attention (2022) como destaque</p>
+
+    <div class="timeline">
+      <div class="timeline-card"><div class="year" style="color:var(--green);">2017</div><h4>Multi-Head Attention</h4><p>8 heads independentes, cada um com K,V próprios. Base de tudo.</p><span class="badge" style="background:rgba(52,211,153,0.15);color:var(--green);">Transformer · BERT</span></div>
+      <div class="timeline-card"><div class="year" style="color:var(--cyan);">2019</div><h4>Multi-Query Attention</h4><p>K e V ÚNICOS compartilhados. 8× menos memória KV.</p><span class="badge" style="background:rgba(34,211,238,0.15);color:var(--cyan);">PaLM</span></div>
+      <div class="timeline-card featured"><div class="year" style="color:var(--accent);">2022</div><h4 style="color:var(--accent);">Flash Attention</h4><p>Otimização GPU: tiling em SRAM. Nunca materializa matriz n×n. O(n) memória.</p><span class="badge" style="background:var(--accent-soft);color:var(--accent);">GPT-4 · Claude · TODOS</span></div>
+      <div class="timeline-card"><div class="year" style="color:var(--purple);">2023</div><h4>Grouped-Query Attention</h4><p>G grupos de heads compartilham K,V. Equilíbrio qualidade/memória.</p><span class="badge" style="background:rgba(167,139,250,0.15);color:var(--purple);">Llama 2/3 · Mistral</span></div>
+    </div>
+
+    <div class="card accent-left" style="margin-top:18px;">
+      <h4 style="color:var(--accent);font-weight:700;margin-bottom:8px;font-size:0.88rem;">
+        <svg width="15" height="15" stroke="var(--accent)" style="vertical-align:middle;"><use href="#ico-flash"/></svg>
+        Flash Attention (Dao et al., 2022) — O padrão em todos os LLMs
+      </h4>
+      <div style="display:flex;gap:20px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:240px;"><p style="font-size:0.8rem;margin-bottom:6px;color:var(--red);font-weight:600;">Problema original</p><ul style="font-size:0.72rem;margin-left:16px;color:var(--text-dim);"><li>Matriz de atenção [n×n] materializada em HBM</li><li>n=2048 → 4M elementos → gargalo</li><li>HBM ~1.5 TB/s vs SRAM ~19 TB/s</li></ul></div>
+        <div style="flex:1;min-width:240px;"><p style="font-size:0.8rem;margin-bottom:6px;color:var(--green);font-weight:600;">Solução Flash</p><ul style="font-size:0.72rem;margin-left:16px;color:var(--text-dim);"><li><strong>Tiling:</strong> blocos em SRAM</li><li>Nunca materializa matriz completa</li><li>Recomputa no backward (não salva)</li></ul></div>
+      </div>
+    </div>
+
+    <table class="table-modern" style="margin-top:16px;">
+      <tr><th>Variante</th><th>Qualidade</th><th>Velocidade</th><th>Memória KV</th><th>Ano</th></tr>
+      <tr><td>MHA</td><td>★★★★★</td><td>★★★</td><td>O(h·n·d<sub>k</sub>)</td><td>2017</td></tr>
+      <tr><td>GQA</td><td>★★★★☆</td><td>★★★★</td><td>O(G·n·d<sub>k</sub>)</td><td>2023</td></tr>
+      <tr><td>MQA</td><td>★★★★</td><td>★★★★★</td><td>O(1·n·d<sub>k</sub>)</td><td>2019</td></tr>
+      <tr class="row-highlight"><td>Flash Attention</td><td>★★★★★</td><td>★★★★★</td><td>O(n)</td><td>2022</td></tr>
+    </table>
+    <p style="font-size:0.62rem;color:var(--text-dim);margin-top:4px;">Flash Attention é ortogonal — funciona com MHA, MQA ou GQA. Não muda a matemática, apenas como roda no hardware.</p>
+
+    <div class="highlight-box">
+      <p style="color:var(--text-bright);font-weight:600;margin-bottom:6px;">🎯 Pergunta final para a audiência:</p>
+      <p style="font-size:0.9rem;font-weight:500;color:var(--accent);">
+        "O que vocês acham que vem depois da atenção? State Space Models? Mamba? Híbridos?"
+      </p>
+    </div>
+  </div>
+
+  <!-- FOOTER (visible on all section pages) -->
+  <div class="footer" id="section-footer" style="display:none;">
+    <p>GAIA · Multi-Head Attention · "Attention Is All You Need" (Vaswani et al., 2017)</p>
+    <p><span style="color:var(--accent);font-weight:600;">Shayene Figueredo · 2026</span></p>
+  </div>
+
+</div><!-- /container -->
+
+<!-- ============================================================
+     JAVASCRIPT — Tab Navigation + Interactive Features
+     ============================================================ -->
+<script>
+// ===========================================
+// TAB NAVIGATION
+// ===========================================
+let currentSection = null;
+
+function showSection(id) {
+  document.getElementById('home').style.display = 'none';
+  document.querySelectorAll('.section-page').forEach(el => el.style.display = 'none');
+
+  const section = document.getElementById(id);
+  if (section) {
+    section.style.display = 'block';
+    section.style.animation = 'none';
+    section.offsetHeight;
+    section.style.animation = 'fadeSlideIn 0.35s ease';
+    currentSection = id;
+    document.getElementById('section-footer').style.display = 'block';
+  }
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  // Initialize canvases if entering bloco3 or bloco5
+  if (id === 'bloco3') { setTimeout(drawWordGraph, 100); }
+  if (id === 'bloco5') { setTimeout(updateBleuLine, 100); }
+}
+
+function showHome() {
+  document.querySelectorAll('.section-page').forEach(el => el.style.display = 'none');
+  document.getElementById('section-footer').style.display = 'none';
+
+  const home = document.getElementById('home');
+  home.style.display = 'block';
+  home.style.animation = 'none';
+  home.offsetHeight;
+  home.style.animation = 'fadeSlideIn 0.35s ease';
+
+  currentSection = null;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Keyboard navigation
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape' && currentSection) {
+    showHome();
+  }
+});
+
+document.addEventListener('keydown', function(e) {
+  if (e.key >= '1' && e.key <= '8' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+    if (document.activeElement && document.activeElement.tagName === 'INPUT') return;
+    showSection('bloco' + e.key);
+  }
+  if (e.key === 'h' && !e.ctrlKey && !e.metaKey && !e.altKey && currentSection) {
+    if (document.activeElement && document.activeElement.tagName === 'INPUT') return;
+    showHome();
+  }
+});
+
+// ===========================================
+// EQUATION WALKTHROUGH
+// ===========================================
+function showEqDetail(i) {
+  document.querySelectorAll('.eq-step-walk').forEach((el, idx) => el.classList.toggle('active', idx === i));
+  document.querySelectorAll('.eq-detail').forEach((el, idx) => el.classList.toggle('show', idx === i));
+}
+
+// ===========================================
+// WORD GRAPH (Bloco 3)
+// ===========================================
+const words = ['O', 'gato', 'comeu', 'peixe'];
+let wordPos = [{x:180,y:180},{x:320,y:130},{x:440,y:200},{x:560,y:140}];
+let drag = -1, hover = -1;
+let wc, wctx;
+
+function initWordGraph() {
+  wc = document.getElementById('wordCanvas');
+  if (!wc) return;
+  wctx = wc.getContext('2d');
+  drawWordGraph();
+}
+
+function drawWordGraph() {
+  if (!wc || !wctx) return;
+  const W=700, H=380;
+  wctx.clearRect(0,0,W,H);
+
+  wctx.strokeStyle='rgba(26,32,64,0.15)'; wctx.lineWidth=0.5;
+  for(let x=0;x<W;x+=50){wctx.beginPath();wctx.moveTo(x,0);wctx.lineTo(x,H);wctx.stroke();}
+  for(let y=0;y<H;y+=50){wctx.beginPath();wctx.moveTo(0,y);wctx.lineTo(W,y);wctx.stroke();}
+
+  const attn=[[0.42,0.28,0.18,0.12],[0.18,0.42,0.28,0.12],[0.12,0.28,0.35,0.25],[0.12,0.18,0.28,0.42]];
+  const edges=[];
+  for(let i=0;i<4;i++){for(let j=0;j<4;j++){if(i!==j)edges.push({i,j,w:attn[i][j]});}}
+  edges.sort((a,b)=>b.w-a.w);
+
+  edges.forEach(e=>{
+    const w=e.w;
+    const alpha=w;
+    const lw=2 + w*38;
+    const g=wctx.createLinearGradient(wordPos[e.i].x,wordPos[e.i].y,wordPos[e.j].x,wordPos[e.j].y);
+    g.addColorStop(0,`rgba(77,138,240,${alpha})`);
+    g.addColorStop(1,`rgba(52,211,153,${alpha*0.6})`);
+    wctx.beginPath();wctx.moveTo(wordPos[e.i].x,wordPos[e.i].y);wctx.lineTo(wordPos[e.j].x,wordPos[e.j].y);
+    wctx.strokeStyle=g;wctx.lineWidth=lw;
+    if(w>0.20){wctx.shadowColor=`rgba(77,138,240,${alpha*0.7})`;wctx.shadowBlur=lw*1.2;}
+    wctx.stroke();
+    wctx.shadowBlur=0;
+  });
+
+  const colors=['#f59e4b','#34d399','#6da8ff','#a78bfa'];
+  const colorNames=['O (artigo)','gato (sujeito)','comeu (verbo)','peixe (objeto)'];
+
+  for(let i=0;i<4;i++){
+    const {x,y}=wordPos[i];
+    const r=hover===i?36:30;
+    const glow=wctx.createRadialGradient(x,y,r*0.5,x,y,r*2);
+    glow.addColorStop(0,colors[i]+'35');
+    glow.addColorStop(1,'transparent');
+    wctx.beginPath();wctx.arc(x,y,r*2,0,Math.PI*2);wctx.fillStyle=glow;wctx.fill();
+    wctx.beginPath();wctx.arc(x,y,r,0,Math.PI*2);
+    wctx.fillStyle='#0a0e1a';wctx.fill();
+    wctx.strokeStyle=colors[i];wctx.lineWidth=hover===i?3.5:2.5;
+    wctx.shadowColor=colors[i];wctx.shadowBlur=hover===i?22:8;
+    wctx.stroke();wctx.shadowBlur=0;
+    wctx.fillStyle='#eef1f8';wctx.font='600 13px Montserrat,sans-serif';wctx.textAlign='center';wctx.textBaseline='middle';
+    wctx.fillText(words[i],x,y);
+    wctx.fillStyle=colors[i];wctx.font='600 8px Montserrat';
+    wctx.fillText(colorNames[i],x,y-r-10);
+  }
+
+  if(hover>=0){
+    document.getElementById('wordHoverInfo').innerHTML='<span style="color:'+colors[hover]+';font-weight:700;">'+colorNames[hover]+'</span> — passe o mouse sobre as linhas para ver os pesos.';
+  }else{
+    document.getElementById('wordHoverInfo').textContent='Passe o mouse sobre um círculo para destacá-lo.';
+  }
+}
+
+function resetWordGraph(){
+  wordPos=[{x:180,y:180},{x:320,y:130},{x:440,y:200},{x:560,y:140}];
+  drawWordGraph();
+}
+
+// Attach word graph events (delegated — canvas may not exist yet on home)
+function bindWordGraph() {
+  const c = document.getElementById('wordCanvas');
+  if (!c || c._bound) return;
+  c._bound = true;
+
+  c.addEventListener('mousedown',e=>{const r=c.getBoundingClientRect();const mx=e.clientX-r.left,my=e.clientY-r.top;for(let i=3;i>=0;i--){const dx=mx-wordPos[i].x,dy=my-wordPos[i].y;if(Math.sqrt(dx*dx+dy*dy)<34){drag=i;break;}}});
+  c.addEventListener('mousemove',e=>{const r=c.getBoundingClientRect();const mx=e.clientX-r.left,my=e.clientY-r.top;if(drag>=0){wordPos[drag].x=Math.max(35,Math.min(665,mx));wordPos[drag].y=Math.max(35,Math.min(345,my));drawWordGraph();}else{
+    let nh=-1;
+    for(let i=0;i<4;i++){const dx=mx-wordPos[i].x,dy=my-wordPos[i].y;if(Math.sqrt(dx*dx+dy*dy)<34){nh=i;break;}}
+    if(nh!==hover){hover=nh;drawWordGraph();}
+    if(hover>=0){
+      const attn=[[0.42,0.28,0.18,0.12],[0.18,0.42,0.28,0.12],[0.12,0.28,0.35,0.25],[0.12,0.18,0.28,0.42]];
+      const cnames=['O','gato','comeu','peixe'];
+      const cols=['#f59e4b','#34d399','#6da8ff','#a78bfa'];
+      let info='';
+      for(let j=0;j<4;j++){if(j!==hover){info+=' → '+cnames[j]+': <strong style="color:'+cols[hover]+';">'+(attn[hover][j]*100).toFixed(0)+'%</strong> &nbsp;';}}
+      document.getElementById('wordHoverInfo').innerHTML='<span style="color:'+cols[hover]+';font-weight:700;">'+cnames[hover]+'</span> presta atenção: '+info;
+    }
+  }});
+  c.addEventListener('mouseup',()=>{drag=-1;});
+  c.addEventListener('mouseleave',()=>{drag=-1;hover=-1;drawWordGraph();document.getElementById('wordHoverInfo').textContent='Passe o mouse sobre um círculo para ver os pesos de atenção.';});
+  c.addEventListener('touchstart',e=>{const r=c.getBoundingClientRect();const mx=e.touches[0].clientX-r.left,my=e.touches[0].clientY-r.top;for(let i=3;i>=0;i--){const dx=mx-wordPos[i].x,dy=my-wordPos[i].y;if(Math.sqrt(dx*dx+dy*dy)<35){drag=i;e.preventDefault();break;}}});
+  c.addEventListener('touchmove',e=>{if(drag>=0){const r=c.getBoundingClientRect();wordPos[drag].x=Math.max(30,Math.min(670,e.touches[0].clientX-r.left));wordPos[drag].y=Math.max(30,Math.min(350,e.touches[0].clientY-r.top));drawWordGraph();e.preventDefault();}});
+  c.addEventListener('touchend',()=>{drag=-1;});
+}
+
+// ===========================================
+// BLEU CHART (Bloco 5)
+// ===========================================
+let bc, bctx;
+function initBleuChart() {
+  bc = document.getElementById('bleuCanvas');
+  if (!bc) return;
+  bctx = bc.getContext('2d');
+  updateBleuLine();
+}
+
+function updateBleuLine(){
+  if (!bc || !bctx) return;
+  const h=+document.getElementById('bleuH').value,dk=+document.getElementById('bleuDk').value,dmodel=h*dk;
+  document.getElementById('bleuHVal').textContent=h;document.getElementById('bleuDkVal').textContent=dk;document.getElementById('bleuDmodelVal').textContent=dmodel;
+  let bleu;if(dk>=128)bleu=24.9+(dk-128)/384*0.6;else if(dk>=64)bleu=25.5+(64-dk)/64*0.3;else if(dk>=32)bleu=25.8;else if(dk>=16)bleu=25.8-(32-dk)/16*0.4;else bleu=25.4-(16-dk)/8*0.5;
+  bleu=Math.round(bleu*100)/100;if(dk<32)bleu-=0.2;if(h<3&&dk>200)bleu-=0.3;
+  document.getElementById('bleuBigScore').textContent=bleu.toFixed(1);
+  let ins;if(bleu<=25.0)ins='BLEU baixo. d<sub>k</sub>='+dk+'. '+(dk>200?'Averaging embaralha. Use mais heads.':'d<sub>k</sub> pequeno demais.')+' Tente h=8, d<sub>k</sub>=64.';
+  else if(bleu<=25.5)ins='BLEU moderado. h='+h+', d<sub>k</sub>='+dk+'. O sweet spot é h=8, d<sub>k</sub>=64 (BLEU 25.8).';
+  else ins='BLEU ótimo! h='+h+', d<sub>k</sub>='+dk+' no sweet spot. Múltiplas perspectivas com dimensão suficiente.';
+  document.getElementById('bleuInsight').innerHTML=ins;
+  drawBleuChart(h,dk,bleu);
+}
+
+function drawBleuChart(ch,cdk,cbleu){
+  if (!bc || !bctx) return;
+  const W=880,H=260,pad={top:30,right:40,bottom:40,left:50},pw=W-pad.left-pad.right,ph=H-pad.top-pad.bottom;
+  bctx.clearRect(0,0,W,H);
+  bctx.strokeStyle='rgba(26,32,64,0.35)';bctx.lineWidth=1;
+  for(let i=0;i<=5;i++){const y=pad.top+(ph/5)*i;bctx.beginPath();bctx.moveTo(pad.left,y);bctx.lineTo(W-pad.right,y);bctx.stroke();bctx.fillStyle='#6b738a';bctx.font='500 9px Montserrat';bctx.textAlign='right';bctx.fillText((26.6-i*0.4).toFixed(1),pad.left-8,y+3);}
+  [1,2,4,8,12,16,24,32].forEach(hv=>{const x=pad.left+(Math.log2(hv)/5)*pw;bctx.fillStyle='#6b738a';bctx.font='500 9px Montserrat';bctx.textAlign='center';bctx.fillText('h='+hv,x,H-pad.bottom+14);});
+  const pts=[];for(let hv=1;hv<=32;hv++){const dfh=Math.round(512/hv);let b;if(dfh>=128)b=24.9+(dfh-128)/384*0.6;else if(dfh>=64)b=25.5+(64-dfh)/64*0.3;else if(dfh>=32)b=25.8;else if(dfh>=16)b=25.8-(32-dfh)/16*0.4;else b=25.4-(16-dfh)/8*0.5;if(dfh<32)b-=0.2;if(hv<3&&dfh>200)b-=0.3;const x=pad.left+(Math.log2(hv)/5)*pw,y=pad.top+((26.5-b)/2.0)*ph;pts.push({x,y,bleu:b});}
+  const grad=bctx.createLinearGradient(0,pad.top,0,H-pad.bottom);grad.addColorStop(0,'rgba(77,138,240,0.1)');grad.addColorStop(1,'rgba(77,138,240,0.0)');
+  bctx.beginPath();bctx.moveTo(pts[0].x,pad.top+ph);pts.forEach(p=>bctx.lineTo(p.x,p.y));bctx.lineTo(pts[pts.length-1].x,pad.top+ph);bctx.closePath();bctx.fillStyle=grad;bctx.fill();
+  bctx.beginPath();pts.forEach((p,i)=>i===0?bctx.moveTo(p.x,p.y):bctx.lineTo(p.x,p.y));bctx.strokeStyle='rgba(77,138,240,0.35)';bctx.lineWidth=4;bctx.shadowColor='rgba(77,138,240,0.4)';bctx.shadowBlur=14;bctx.stroke();bctx.shadowBlur=0;
+  bctx.beginPath();pts.forEach((p,i)=>i===0?bctx.moveTo(p.x,p.y):bctx.lineTo(p.x,p.y));bctx.strokeStyle='#6da8ff';bctx.lineWidth=2;bctx.stroke();
+  [1,4,8,16,32].forEach(hv=>{const dfh=Math.round(512/hv);let b;if(dfh>=128)b=24.9+(dfh-128)/384*0.6;else if(dfh>=64)b=25.5+(64-dfh)/64*0.3;else if(dfh>=32)b=25.8;else if(dfh>=16)b=25.8-(32-dfh)/16*0.4;else b=25.4-(16-dfh)/8*0.5;if(dfh<32)b-=0.2;bctx.beginPath();bctx.arc(pad.left+(Math.log2(hv)/5)*pw,pad.top+((26.5-b)/2.0)*ph,3.2,0,Math.PI*2);bctx.fillStyle='#34d399';bctx.fill();});
+  const ux=pad.left+(Math.log2(ch)/5)*pw,uy=pad.top+((26.5-cbleu)/2.0)*ph;
+  const pg=bctx.createRadialGradient(ux,uy,5,ux,uy,13);pg.addColorStop(0,'rgba(52,211,153,0.45)');pg.addColorStop(1,'rgba(52,211,153,0)');bctx.beginPath();bctx.arc(ux,uy,13,0,Math.PI*2);bctx.fillStyle=pg;bctx.fill();
+  bctx.beginPath();bctx.arc(ux,uy,4.5,0,Math.PI*2);bctx.fillStyle='#34d399';bctx.shadowColor='#34d399';bctx.shadowBlur=12;bctx.fill();bctx.shadowBlur=0;
+  bctx.fillStyle='#34d399';bctx.font='700 9px Montserrat';bctx.textAlign='left';bctx.fillText('h='+ch+' | BLEU='+cbleu.toFixed(1),ux+15,uy-3);
+}
+
+// Initialize on first load
+initWordGraph();
+bindWordGraph();
+initBleuChart();
+</script>
+
+</body>
+</html>

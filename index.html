@@ -1013,6 +1013,27 @@ body::after {
 
     <div class="draw-step"><div class="draw-step-header" onclick="this.parentElement.classList.toggle('open')"><span class="draw-step-num">3</span>Comparação final — mesmo custo, qualidade superior</div><div class="draw-step-body"><table class="table-modern"><tr><th></th><th>d<sub>k</sub></th><th>Custo</th><th>BLEU</th></tr><tr class="row-worst"><td>Single-Head</td><td>512</td><td>O(n²·512)</td><td>24.9</td></tr><tr class="row-best"><td>Multi-Head (h=8)</td><td>64</td><td>8×O(n²·64)=O(n²·512)</td><td>25.8</td></tr></table><p style="margin-top:8px;color:var(--green);font-weight:600;font-size:0.82rem;">Mesmo custo, MUITO melhor qualidade.</p></div></div>
 
+    <!-- ========== INTERACTIVE DEMO: Single vs Multi-Head ========== -->
+    <div class="card accent-left" style="margin-top:24px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+        <span style="background:var(--purple);color:#fff;padding:3px 10px;border-radius:20px;font-weight:700;font-size:0.72rem;">🧪 Demo Visual</span>
+        <h4 style="color:var(--text-bright);font-weight:700;font-size:0.9rem;margin:0;">1 Cabeça vs 8 Cabeças — Frase Ambígua</h4>
+      </div>
+      <p style="font-size:0.78rem;color:var(--text-dim);margin-bottom:4px;">Frase desafiadora: <strong style="color:var(--text-bright);font-size:0.85rem;">"A neta disse à avó que ela herdaria a fortuna da família"</strong></p>
+      <p style="font-size:0.7rem;color:var(--text-dim);margin-bottom:12px;">Quem herdou? A <strong style="color:var(--orange);">neta</strong> ou a <strong style="color:var(--accent);">avó</strong>? Depende de gênero (feminino ambas), sintaxe (sujeito da oração principal), posição relativa e semântica (herdar → neta). Uma cabeça só embaralha tudo. Oito separam os sinais.</p>
+
+      <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+        <button id="btn1head" onclick="setHeads(1)" style="background:var(--red);color:#fff;border:none;padding:8px 20px;border-radius:20px;font-weight:700;font-size:0.75rem;cursor:pointer;font-family:var(--font);opacity:0.4;">🧠 1 Cabeça (BLEU 24.9)</button>
+        <button id="btn8head" onclick="setHeads(8)" style="background:var(--green);color:#000;border:none;padding:8px 20px;border-radius:20px;font-weight:700;font-size:0.75rem;cursor:pointer;font-family:var(--font);">🧠🧠🧠 8 Cabeças (BLEU 25.8)</button>
+      </div>
+
+      <canvas id="canvasHeads" width="860" height="430" style="width:100%;max-width:860px;border-radius:10px;background:var(--bg);border:1px solid var(--border);"></canvas>
+
+      <div id="headsInsight" style="margin-top:10px;padding:12px 16px;background:var(--accent-soft);border-radius:var(--radius-sm);border-left:3px solid var(--green);font-size:0.78rem;color:var(--text);">
+        <strong style="color:var(--green);">8 cabeças:</strong> Head 1 captura sintaxe (neta→herdaria), Head 3 vê gênero (ela→neta), Head 5 usa posição relativa, Head 7 entende semântica (herdar→neta). Resultado: <strong style="color:var(--green);">confiança 87% em "neta"</strong>. Já 1 cabeça embaralha: <strong style="color:var(--red);">47% neta, 38% avó</strong> — quase um chute.
+      </div>
+    </div>
+
     <p style="text-align:center;font-size:0.9rem;color:var(--accent);font-weight:600;margin:16px 0;">MultiHead(Q, K, V) = Concat(head<sub>1</sub>, ..., head<sub>h</sub>) × W<sup>O</sup></p>
   </div>
 
@@ -1354,6 +1375,7 @@ function showSection(id) {
 
   // Initialize canvases if entering bloco3, bloco5, or bloco9
   if (id === 'bloco3') { setTimeout(drawWordGraph, 100); }
+  if (id === 'bloco4') { setTimeout(drawHeadsDemo, 100); }
   if (id === 'bloco5') { setTimeout(updateBleuLine, 100); }
   if (id === 'bloco9') { setTimeout(initBigOCharts, 100); }
 }
@@ -1543,6 +1565,219 @@ function drawBleuChart(ch,cdk,cbleu){
   const pg=bctx.createRadialGradient(ux,uy,5,ux,uy,13);pg.addColorStop(0,'rgba(52,211,153,0.45)');pg.addColorStop(1,'rgba(52,211,153,0)');bctx.beginPath();bctx.arc(ux,uy,13,0,Math.PI*2);bctx.fillStyle=pg;bctx.fill();
   bctx.beginPath();bctx.arc(ux,uy,4.5,0,Math.PI*2);bctx.fillStyle='#34d399';bctx.shadowColor='#34d399';bctx.shadowBlur=12;bctx.fill();bctx.shadowBlur=0;
   bctx.fillStyle='#34d399';bctx.font='700 9px Montserrat';bctx.textAlign='left';bctx.fillText('h='+ch+' | BLEU='+cbleu.toFixed(1),ux+15,uy-3);
+}
+
+// ===========================================
+// SINGLE vs MULTI-HEAD DEMO (Bloco 4)
+// ===========================================
+// roundRect polyfill
+if (!CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+    if (typeof r === 'number') r = { tl: r, tr: r, br: r, bl: r };
+    this.beginPath();
+    this.moveTo(x + r.tl, y);
+    this.lineTo(x + w - r.tr, y);
+    this.quadraticCurveTo(x + w, y, x + w, y + r.tr);
+    this.lineTo(x + w, y + h - r.br);
+    this.quadraticCurveTo(x + w, y + h, x + w - r.br, y + h);
+    this.lineTo(x + r.bl, y + h);
+    this.quadraticCurveTo(x, y + h, x, y + h - r.bl);
+    this.lineTo(x, y + r.tl);
+    this.quadraticCurveTo(x, y, x + r.tl, y);
+    this.closePath();
+  };
+}
+
+let headsMode = 8;
+
+function setHeads(n) {
+  headsMode = n;
+  const btn1 = document.getElementById('btn1head');
+  const btn8 = document.getElementById('btn8head');
+  if (btn1) btn1.style.opacity = n === 1 ? '1' : '0.4';
+  if (btn8) btn8.style.opacity = n === 8 ? '1' : '0.4';
+  drawHeadsDemo();
+}
+
+function drawHeadsDemo() {
+  const c = document.getElementById('canvasHeads');
+  if (!c) return;
+  const ctx = c.getContext('2d');
+  const W = 860, H = 430;
+  ctx.clearRect(0, 0, W, H);
+
+  const words = ['A neta', 'disse', 'à avó', 'que', 'ela', 'herdaria', 'a fortuna', 'da família'];
+  const n = words.length;
+  const colors = ['#f59e4b','#f87171','#4d8af0','#6b738a','#a78bfa','#34d399','#22d3ee','#fbbf24'];
+
+  // Sentence display at top
+  const wordX = [];
+  let cx = 80;
+  words.forEach((w, i) => {
+    ctx.fillStyle = i === 0 ? '#f59e4b' : i === 4 ? '#a78bfa' : i === 2 ? '#4d8af0' : '#eef1f8';
+    ctx.font = `600 ${i===4||i===5?'15':'14'}px Montserrat`;
+    ctx.textAlign = 'center';
+    const m = ctx.measureText(w).width;
+    const x = cx + m / 2;
+    wordX.push(x);
+    ctx.fillText(w, x, 38);
+    cx += m + 16;
+  });
+
+  if (headsMode === 1) {
+    // === SINGLE HEAD VIEW ===
+    ctx.fillStyle = '#f87171'; ctx.font = '700 18px Montserrat'; ctx.textAlign = 'left';
+    ctx.fillText('1 Cabeça — Tudo Misturado', 50, 82);
+
+    // One big attention block
+    const shY = 110, shH = 260, shW = 700, shX = 80;
+
+    // Draw messy arcs — single head tries to do everything, gets confused
+    ctx.globalAlpha = 0.12;
+    for (let i = 0; i < n; i++) {
+      for (let j = 0; j < n; j++) {
+        if (i === j) continue;
+        const x1 = wordX[i], x2 = wordX[j];
+        const y1 = 60, y2 = shY + shH;
+        const cpY = shY + 40 + Math.abs(i - j) * 25;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.quadraticCurveTo((x1 + x2) / 2, cpY, x2, y2);
+        ctx.strokeStyle = '#f87171';
+        ctx.lineWidth = 1.2 + Math.random() * 3;
+        ctx.stroke();
+      }
+    }
+    ctx.globalAlpha = 1;
+
+    // Single attention distribution box
+    ctx.fillStyle = 'rgba(10,14,26,0.95)'; ctx.strokeStyle = 'rgba(248,113,113,0.3)'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.roundRect(shX, shY, shW, shH, 12); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#f87171'; ctx.font = '600 12px Montserrat'; ctx.textAlign = 'center';
+    ctx.fillText('1 matriz de atenção [8×8] — tenta capturar TUDO de uma vez', shX + shW / 2, shY + 24);
+
+    // Confused distribution bars
+    const barW = 50;
+    const barAreaX = shX + 50;
+    const barAreaW = shW - 100;
+    const barH = 120;
+    const barY = shY + 60;
+    const barGap = barAreaW / (n + 0.5);
+
+    // Single-head attention weights (muddy — spread across many tokens)
+    const shWeights = [
+      [0.35, 0.05, 0.10, 0.08, 0.22, 0.10, 0.06, 0.04], // neta
+      [0.10, 0.30, 0.12, 0.15, 0.08, 0.10, 0.08, 0.07], // disse
+      [0.08, 0.10, 0.32, 0.12, 0.18, 0.08, 0.06, 0.06], // avó
+      [0.05, 0.12, 0.08, 0.28, 0.10, 0.15, 0.12, 0.10], // que
+      [0.20, 0.08, 0.17, 0.10, 0.22, 0.12, 0.06, 0.05], // ela  ← confuso!
+      [0.10, 0.05, 0.06, 0.08, 0.12, 0.38, 0.11, 0.10], // herdaria
+      [0.05, 0.04, 0.06, 0.08, 0.05, 0.10, 0.42, 0.20], // fortuna
+      [0.04, 0.04, 0.05, 0.07, 0.04, 0.08, 0.18, 0.50], // família
+    ];
+
+    n && words.forEach((w, i) => {
+      const bx = barAreaX + i * barGap;
+      shWeights[i].forEach((wt, j) => {
+        const h = wt * barH;
+        const by = barY + barH - h;
+        ctx.fillStyle = j === i ? colors[i] : `rgba(248,113,113,${0.25 + wt * 1.2})`;
+        ctx.fillRect(bx, by, barW * 0.85, h);
+      });
+      ctx.fillStyle = '#eef1f8'; ctx.font = '600 9px Montserrat'; ctx.textAlign = 'center';
+      ctx.fillText(i === 4 ? 'ela?' : words[i].length > 6 ? words[i].substring(0, 5) + '..' : words[i], bx + barW * 0.42, barY + barH + 16);
+    });
+
+    // Confusion annotation
+    ctx.fillStyle = '#f87171'; ctx.font = '600 13px Montserrat'; ctx.textAlign = 'center';
+    ctx.fillText('"ela" → neta (47%) ou avó (38%)? Quase um chute.', shX + shW / 2, barY + barH + 50);
+
+    // BLEU result
+    ctx.fillStyle = '#f87171'; ctx.font = '800 16px Montserrat';
+    ctx.fillText('BLEU: 24.9 ❌', shX + shW / 2, shY + shH + 45);
+
+  } else {
+    // === MULTI-HEAD VIEW (8 heads) ===
+    ctx.fillStyle = '#34d399'; ctx.font = '700 18px Montserrat'; ctx.textAlign = 'left';
+    ctx.fillText('8 Cabeças — Cada Uma Especialista', 50, 82);
+
+    const mhX = 40, mhY = 110;
+    const headW = 90, headH = 110;
+    const gap = 8;
+
+    // Draw 8 head boxes in 2 rows of 4
+    const headNames = ['Sintaxe', 'Gênero', 'Corref.', 'Posição', 'Semântica', 'Sintática', 'Redund.', 'Local'];
+    const headColors = ['#f59e4b','#a78bfa','#22d3ee','#fbbf24','#34d399','#f59e4b','#6b738a','#4d8af0'];
+
+    for (let h = 0; h < 8; h++) {
+      const row = Math.floor(h / 4);
+      const col = h % 4;
+      const hx = mhX + col * (headW + gap) + 8;
+      const hy = mhY + row * (headH + gap + 10);
+
+      // Head box
+      ctx.fillStyle = 'rgba(10,14,26,0.92)';
+      ctx.strokeStyle = `${headColors[h]}55`;
+      ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.roundRect(hx, hy, headW, headH, 8); ctx.fill(); ctx.stroke();
+
+      // Head number
+      ctx.fillStyle = headColors[h]; ctx.font = '700 13px Montserrat'; ctx.textAlign = 'center';
+      ctx.fillText('H' + (h + 1), hx + headW / 2, hy + 20);
+      ctx.fillStyle = '#eef1f8'; ctx.font = '600 8px Montserrat';
+      ctx.fillText(headNames[h], hx + headW / 2, hy + 35);
+
+      // Simplified attention pattern inside each head
+      const innerY = hy + 48;
+      const innerH = headH - 56;
+      const dots = 5;
+      for (let d = 0; d < dots; d++) {
+        const dx = hx + 10 + (headW - 20) * d / (dots - 1);
+        const dh = 4 + ((h * 3 + d * 7) % 13) * 2;
+        ctx.fillStyle = headColors[h];
+        ctx.globalAlpha = 0.3 + (d === Math.floor(h % 5) ? 0.7 : 0);
+        ctx.fillRect(dx, hy + innerH - dh + innerY - 8, (headW - 20) / dots - 2, dh);
+      }
+      ctx.globalAlpha = 1;
+
+      // Which token this head attends to most
+      const bestToken = [0, 4, 4, 5, 0, 4, 2, 0][h];
+      ctx.fillStyle = headColors[h]; ctx.font = '600 7px Montserrat';
+      ctx.fillText('→ ' + words[bestToken].replace(' ', ''), hx + headW / 2, hy + headH - 6);
+    }
+
+    // Arrow showing concatenation
+    const concatY = mhY + 2 * (headH + gap + 10) + 20;
+    ctx.fillStyle = '#eef1f8'; ctx.font = '600 12px Montserrat'; ctx.textAlign = 'center';
+    ctx.fillText('↓ Concat + Wᴼ ↓', W / 2 - 30, concatY + 16);
+
+    // Final output box
+    const outX = 200, outW = 430;
+    const outY = concatY + 34;
+    const outH = 50;
+    ctx.fillStyle = 'rgba(10,14,26,0.95)'; ctx.strokeStyle = 'rgba(52,211,153,0.5)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.roundRect(outX, outY, outW, outH, 10); ctx.fill(); ctx.stroke();
+
+    // Resolution text
+    ctx.fillStyle = '#34d399'; ctx.font = '700 13px Montserrat'; ctx.textAlign = 'center';
+    ctx.fillText('"ela" = neta (87% confiança) ✅ — 8 cabeças resolvem a ambiguidade', outX + outW / 2, outY + outH / 2 + 5);
+
+    // BLEU result
+    ctx.fillStyle = '#34d399'; ctx.font = '800 16px Montserrat';
+    ctx.fillText('BLEU: 25.8 ✅', outX + outW / 2, outY + outH + 28);
+  }
+
+  // Update insight box
+  const insight = document.getElementById('headsInsight');
+  if (insight) {
+    if (headsMode === 1) {
+      insight.innerHTML = `<strong style="color:var(--red);">1 cabeça:</strong> Tenta capturar sintaxe, gênero, correferência e semântica <strong style="color:var(--red);">no mesmo espaço de atenção</strong>. Os padrões se embaralham (averaging). "ela" fica ambíguo — 47% neta, 38% avó. <strong style="color:var(--red);">O modelo quase chuta.</strong> BLEU cai pra 24.9.`;
+      insight.style.borderLeftColor = 'var(--red)';
+    } else {
+      insight.innerHTML = `<strong style="color:var(--green);">8 cabeças:</strong> Head 1 foca em sintaxe (sujeito→herdar), Head 2 em concordância de gênero (ela→neta), Head 3 em correferência, Head 5 em semântica (herdar→neta). Cada head é <strong style="color:var(--green);">especialista em um aspecto</strong>. Resultado combinado: <strong style="color:var(--green);">87% de confiança em "neta"</strong>. BLEU sobe pra 25.8. Mesmo custo computacional.`;
+      insight.style.borderLeftColor = 'var(--green)';
+    }
+  }
 }
 
 // ===========================================

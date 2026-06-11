@@ -229,6 +229,7 @@ body::after {
 .bloco-card:nth-child(6) { --card-accent: #f87171; --card-accent-soft: rgba(248,113,113,0.1); }
 .bloco-card:nth-child(7) { --card-accent: #f59e4b; --card-accent-soft: rgba(245,158,75,0.1); }
 .bloco-card:nth-child(8) { --card-accent: #34d399; --card-accent-soft: rgba(52,211,153,0.1); }
+.bloco-card:nth-child(9) { --card-accent: #fbbf24; --card-accent-soft: rgba(251,191,36,0.12); }
 
 /* ============================================================
    SECTION PAGES (hidden by default)
@@ -578,6 +579,7 @@ body::after {
   <symbol id="ico-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></symbol>
   <symbol id="ico-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></symbol>
   <symbol id="ico-chevron-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></symbol>
+  <symbol id="ico-graph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 20 10 14 14 10 21 3"/><polyline points="3 3 21 3"/><polyline points="3 3 3 20"/></symbol>
 </svg>
 </head>
 <body>
@@ -591,7 +593,7 @@ body::after {
     <div class="home-header">
       <h1>GAIA</h1>
       <p class="subtitle">Multi-Head Attention · Plataforma Interativa de Apresentação</p>
-      <p class="meta">Baseado em "Attention Is All You Need" (Vaswani et al., 2017) · 30 minutos · 8 blocos</p>
+      <p class="meta">Baseado em "Attention Is All You Need" (Vaswani et al., 2017) · 37 minutos · 9 blocos</p>
     </div>
 
     <div class="cards-grid">
@@ -674,6 +676,16 @@ body::after {
         <p class="card-desc">Linha do tempo MHA→MQA→Flash→GQA, tabela comparativa, e Flash Attention em destaque.</p>
         <div class="card-arrow">→</div>
       </div>
+
+      <!-- Card 9 — Complexidade Big O -->
+      <div class="bloco-card" onclick="showSection('bloco9')">
+        <div class="card-number">Bloco 9</div>
+        <div class="card-icon"><svg stroke="var(--card-accent)"><use href="#ico-graph"/></svg></div>
+        <h3>Complexidade Big O</h3>
+        <div class="card-time">⏱ 7 minutos</div>
+        <p class="card-desc">O(1) constante, O(log n) logarítmica, O(n) linear — gráficos interativos e conexão com Multi-Head Attention.</p>
+        <div class="card-arrow">→</div>
+      </div>
     </div>
 
     <div class="footer">
@@ -691,7 +703,7 @@ body::after {
         <svg><use href="#ico-chevron-left"/></svg>
         Voltar para Home
       </button>
-      <span class="section-breadcrumb">Bloco 1 de 8 · 5 minutos</span>
+      <span class="section-breadcrumb">Bloco 1 de 9 · 5 minutos</span>
     </div>
 
     <h2><span class="section-icon"><svg width="18" height="18" stroke="var(--accent)"><use href="#ico-link"/></svg></span> Contexto e Problema</h2>
@@ -855,7 +867,7 @@ body::after {
         <svg><use href="#ico-chevron-left"/></svg>
         Voltar para Home
       </button>
-      <span class="section-breadcrumb">Bloco 2 de 8 · 5 minutos</span>
+      <span class="section-breadcrumb">Bloco 2 de 9 · 5 minutos</span>
     </div>
 
     <h2><span class="section-icon"><svg width="18" height="18" stroke="var(--accent)"><use href="#ico-search"/></svg></span> Intuição: Query, Key, Value</h2>
@@ -906,7 +918,7 @@ body::after {
         <svg><use href="#ico-chevron-left"/></svg>
         Voltar para Home
       </button>
-      <span class="section-breadcrumb">Bloco 3 de 8 · 6 minutos</span>
+      <span class="section-breadcrumb">Bloco 3 de 9 · 6 minutos</span>
     </div>
 
     <h2><span class="section-icon"><svg width="18" height="18" stroke="var(--accent)"><use href="#ico-scale"/></svg></span> Scaled Dot-Product Attention</h2>
@@ -981,7 +993,7 @@ body::after {
         <svg><use href="#ico-chevron-left"/></svg>
         Voltar para Home
       </button>
-      <span class="section-breadcrumb">Bloco 4 de 8 ★ · 8 minutos</span>
+      <span class="section-breadcrumb">Bloco 4 de 9 ★ · 8 minutos</span>
     </div>
 
     <h2><span class="section-icon"><svg width="18" height="18" stroke="var(--accent)"><use href="#ico-brain"/></svg></span> Multi-Head Attention</h2>
@@ -1013,7 +1025,7 @@ body::after {
         <svg><use href="#ico-chevron-left"/></svg>
         Voltar para Home
       </button>
-      <span class="section-breadcrumb">Bloco 5 de 8 · 4 minutos</span>
+      <span class="section-breadcrumb">Bloco 5 de 9 · 4 minutos</span>
     </div>
 
     <h2><span class="section-icon"><svg width="18" height="18" stroke="var(--accent)"><use href="#ico-bar-chart"/></svg></span> BLEU Lab · Evidência Experimental</h2>
@@ -1063,7 +1075,7 @@ body::after {
         <svg><use href="#ico-chevron-left"/></svg>
         Voltar para Home
       </button>
-      <span class="section-breadcrumb">Bloco 6 de 8 · 4 minutos</span>
+      <span class="section-breadcrumb">Bloco 6 de 9 · 4 minutos</span>
     </div>
 
     <h2><span class="section-icon"><svg width="18" height="18" stroke="var(--accent)"><use href="#ico-lock"/></svg></span> Os 3 Tipos de Atenção</h2>
@@ -1107,7 +1119,7 @@ body::after {
         <svg><use href="#ico-chevron-left"/></svg>
         Voltar para Home
       </button>
-      <span class="section-breadcrumb">Bloco 7 de 8 · 3 minutos</span>
+      <span class="section-breadcrumb">Bloco 7 de 9 · 3 minutos</span>
     </div>
 
     <h2><span class="section-icon"><svg width="18" height="18" stroke="var(--accent)"><use href="#ico-box"/></svg></span> O Transformer Completo</h2>
@@ -1147,7 +1159,7 @@ body::after {
         <svg><use href="#ico-chevron-left"/></svg>
         Voltar para Home
       </button>
-      <span class="section-breadcrumb">Bloco 8 de 8 · 4 minutos</span>
+      <span class="section-breadcrumb">Bloco 8 de 9 · 4 minutos</span>
     </div>
 
     <h2><span class="section-icon"><svg width="18" height="18" stroke="var(--accent)"><use href="#ico-flash"/></svg></span> Variantes Modernas</h2>
@@ -1188,6 +1200,125 @@ body::after {
     </div>
   </div>
 
+  <!-- ============================================================
+       BLOCO 9 — COMPLEXIDADE BIG O (7 min)
+       ============================================================ -->
+  <div class="section-page" id="bloco9">
+    <div class="back-bar">
+      <button class="btn-back" onclick="showHome()">
+        <svg><use href="#ico-chevron-left"/></svg>
+        Voltar para Home
+      </button>
+      <span class="section-breadcrumb">Bloco 9 de 9 · 7 minutos</span>
+    </div>
+
+    <h2><span class="section-icon"><svg width="18" height="18" stroke="var(--accent)"><use href="#ico-graph"/></svg></span> Complexidade Big O</h2>
+    <p class="subtitle">7 min · O(1), O(log n), O(n) — gráficos interativos e a conexão com Multi-Head Attention</p>
+
+    <!-- Intro -->
+    <div class="card accent-left">
+      <h4 style="color:var(--text-bright);font-weight:700;margin-bottom:8px;font-size:0.9rem;">📐 O que é Big O?</h4>
+      <p style="font-size:0.85rem;">Big O mede como um algoritmo <strong style="color:var(--text-bright);">escala</strong> quando os dados crescem. Não mede segundos — mede <strong style="color:var(--accent);">operações</strong>. É a pergunta: <em>"se eu jogar 10× mais dados, quanto tempo a mais?"</em></p>
+    </div>
+
+    <!-- ========== CHART 1: O(1) ========== -->
+    <div class="card" style="margin-top:24px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+        <span style="background:var(--green);color:#000;padding:3px 10px;border-radius:20px;font-weight:700;font-size:0.72rem;">O(1)</span>
+        <h4 style="color:var(--text-bright);font-weight:700;font-size:0.9rem;margin:0;">Constante</h4>
+        <span style="font-size:0.7rem;color:var(--text-dim);">Tempo fixo, independente do input</span>
+      </div>
+      <p style="font-size:0.8rem;color:var(--text-dim);margin-bottom:8px;">Não importa se são 10 ou 10 milhões de dados. <strong style="color:var(--green);">1 operação, sempre.</strong></p>
+      <canvas id="chartO1" width="700" height="220" style="width:100%;max-width:700px;border-radius:8px;background:var(--bg);border:1px solid var(--border);"></canvas>
+      <div style="display:flex;gap:12px;align-items:center;margin-top:10px;flex-wrap:wrap;">
+        <label style="font-size:0.72rem;color:var(--text-dim);">Custo constante:</label>
+        <input type="range" id="o1cost" min="1" max="10" value="3" oninput="drawO1();document.getElementById('o1costVal').textContent=this.value" style="accent-color:var(--green);">
+        <span id="o1costVal" style="color:var(--green);font-weight:700;font-size:0.8rem;">3</span>
+        <span style="font-size:0.65rem;color:var(--text-dim);">operações</span>
+      </div>
+      <p style="font-size:0.7rem;color:var(--text-dim);margin-top:6px;"><strong style="color:var(--green);">Exemplos:</strong> acesso a array[índice], lookup em hash table, verificar se n é par</p>
+    </div>
+
+    <!-- ========== CHART 2: O(log n) ========== -->
+    <div class="card" style="margin-top:24px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+        <span style="background:var(--accent);color:#fff;padding:3px 10px;border-radius:20px;font-weight:700;font-size:0.72rem;">O(log n)</span>
+        <h4 style="color:var(--text-bright);font-weight:700;font-size:0.9rem;margin:0;">Logarítmica</h4>
+        <span style="font-size:0.7rem;color:var(--text-dim);">Cada dobro de dados = +1 passo</span>
+      </div>
+      <p style="font-size:0.8rem;color:var(--text-dim);margin-bottom:8px;">1 bilhão de dados? Só <strong style="color:var(--accent);">~30 passos</strong>. A curva desacelera conforme os dados crescem.</p>
+      <canvas id="chartOLogN" width="700" height="220" style="width:100%;max-width:700px;border-radius:8px;background:var(--bg);border:1px solid var(--border);"></canvas>
+      <div style="display:flex;gap:12px;align-items:center;margin-top:10px;flex-wrap:wrap;">
+        <label style="font-size:0.72rem;color:var(--text-dim);">Base do log:</label>
+        <input type="range" id="ologbase" min="2" max="10" value="2" oninput="drawOLogN();document.getElementById('ologbaseVal').textContent=this.value" style="accent-color:var(--accent);">
+        <span id="ologbaseVal" style="color:var(--accent);font-weight:700;font-size:0.8rem;">2</span>
+        <span style="font-size:0.65rem;color:var(--text-dim);">(log₂ — busca binária)</span>
+      </div>
+      <div style="display:flex;gap:24px;margin-top:8px;font-size:0.68rem;color:var(--text-dim);flex-wrap:wrap;">
+        <span>n=1.000 → <strong style="color:var(--accent);" id="ologEx1">10</strong> passos</span>
+        <span>n=1.000.000 → <strong style="color:var(--accent);" id="ologEx2">20</strong> passos</span>
+        <span>n=1.000.000.000 → <strong style="color:var(--accent);" id="ologEx3">30</strong> passos</span>
+      </div>
+      <p style="font-size:0.7rem;color:var(--text-dim);margin-top:6px;"><strong style="color:var(--accent);">Exemplos:</strong> busca binária, árvores balanceadas (AVL, Red-Black), atenção esparsa otimizada</p>
+    </div>
+
+    <!-- ========== CHART 3: O(n) ========== -->
+    <div class="card" style="margin-top:24px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+        <span style="background:var(--orange);color:#000;padding:3px 10px;border-radius:20px;font-weight:700;font-size:0.72rem;">O(n)</span>
+        <h4 style="color:var(--text-bright);font-weight:700;font-size:0.9rem;margin:0;">Linear</h4>
+        <span style="font-size:0.7rem;color:var(--text-dim);">Dobra os dados = dobra o tempo</span>
+      </div>
+      <p style="font-size:0.8rem;color:var(--text-dim);margin-bottom:8px;">Cresce na mesma proporção dos dados. <strong style="color:var(--orange);">Previsível, mas custa caro</strong> com volumes enormes.</p>
+      <canvas id="chartON" width="700" height="220" style="width:100%;max-width:700px;border-radius:8px;background:var(--bg);border:1px solid var(--border);"></canvas>
+      <div style="display:flex;gap:12px;align-items:center;margin-top:10px;flex-wrap:wrap;">
+        <label style="font-size:0.72rem;color:var(--text-dim);">Operações por item:</label>
+        <input type="range" id="onops" min="1" max="5" value="1" oninput="drawON();document.getElementById('onopsVal').textContent=this.value" style="accent-color:var(--orange);">
+        <span id="onopsVal" style="color:var(--orange);font-weight:700;font-size:0.8rem;">1</span>
+        <span style="font-size:0.65rem;color:var(--text-dim);">op/item (ex: 1 loop = 1 passada)</span>
+      </div>
+      <p style="font-size:0.7rem;color:var(--text-dim);margin-top:6px;"><strong style="color:var(--orange);">Exemplos:</strong> percorrer array inteiro (find, map, filter), somar elementos, FFN layer no Transformer</p>
+    </div>
+
+    <!-- ========== COMPARISON CHART ========== -->
+    <div class="card accent-left" style="margin-top:24px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+        <span style="background:var(--purple);color:#fff;padding:3px 10px;border-radius:20px;font-weight:700;font-size:0.72rem;">⭐ Comparação</span>
+        <h4 style="color:var(--text-bright);font-weight:700;font-size:0.9rem;margin:0;">As 3 curvas lado a lado</h4>
+      </div>
+      <canvas id="chartCompare" width="700" height="340" style="width:100%;max-width:700px;border-radius:8px;background:var(--bg);border:1px solid var(--border);"></canvas>
+      <div style="display:flex;gap:16px;align-items:center;margin-top:12px;flex-wrap:wrap;">
+        <label style="font-size:0.72rem;color:var(--text-dim);">n máximo:</label>
+        <input type="range" id="compareN" min="10" max="1000" value="200" oninput="drawCompare();document.getElementById('compareNVal').textContent=this.value" style="accent-color:var(--purple);width:180px;">
+        <span id="compareNVal" style="color:var(--purple);font-weight:700;font-size:0.8rem;">200</span>
+        <span style="font-size:0.65rem;color:var(--text-dim);">dados</span>
+      </div>
+      <div style="display:flex;gap:20px;margin-top:8px;font-size:0.75rem;font-weight:600;flex-wrap:wrap;">
+        <span style="color:var(--green);">── O(1) constante</span>
+        <span style="color:var(--accent);">── O(log n) log</span>
+        <span style="color:var(--orange);">── O(n) linear</span>
+      </div>
+    </div>
+
+    <!-- Connection to MHA -->
+    <div class="highlight-box" style="margin-top:28px;">
+      <p style="color:var(--text-bright);font-weight:600;margin-bottom:10px;">🧠 Conexão com Multi-Head Attention</p>
+      <table class="table-modern" style="width:100%;">
+        <thead>
+          <tr><th>Componente</th><th>Complexidade</th><th>Por quê?</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>Self-Attention (vanilla)</strong></td><td style="color:var(--red);font-weight:700;">O(n²)</td><td>Cada token compara com <em>todos</em> os outros</td></tr>
+          <tr><td><strong>Acesso ao embedding</strong></td><td style="color:var(--green);font-weight:700;">O(1)</td><td>Lookup direto na tabela de embeddings</td></tr>
+          <tr><td><strong>Feed-Forward Layer</strong></td><td style="color:var(--orange);">O(n)</td><td>Cada posição processada independentemente</td></tr>
+          <tr><td><strong>Flash / Sparse Attention</strong></td><td style="color:var(--accent);">O(n · log n)</td><td>Reduz o número de pares token-token</td></tr>
+          <tr><td><strong>Linformer / Performer</strong></td><td style="color:var(--green);">O(n)</td><td>Aproxima a matriz de atenção completa</td></tr>
+        </tbody>
+      </table>
+      <p style="font-size:0.75rem;color:var(--text-dim);margin-top:10px;">O grande desafio do Transformer original é o <strong style="color:var(--red);">O(n²)</strong> do self-attention. Com 1000 tokens = 1 milhão de comparações. Por isso a pesquisa corre atrás de otimizações que baixem para <strong style="color:var(--accent);">O(n · log n)</strong> ou <strong style="color:var(--green);">O(n)</strong>.</p>
+    </div>
+  </div>
+
   <!-- FOOTER (visible on all section pages) -->
   <div class="footer" id="section-footer" style="display:none;">
     <p>GAIA · Multi-Head Attention · "Attention Is All You Need" (Vaswani et al., 2017)</p>
@@ -1221,9 +1352,10 @@ function showSection(id) {
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
 
-  // Initialize canvases if entering bloco3 or bloco5
+  // Initialize canvases if entering bloco3, bloco5, or bloco9
   if (id === 'bloco3') { setTimeout(drawWordGraph, 100); }
   if (id === 'bloco5') { setTimeout(updateBleuLine, 100); }
+  if (id === 'bloco9') { setTimeout(initBigOCharts, 100); }
 }
 
 function showHome() {
@@ -1248,7 +1380,7 @@ document.addEventListener('keydown', function(e) {
 });
 
 document.addEventListener('keydown', function(e) {
-  if (e.key >= '1' && e.key <= '8' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+  if (e.key >= '1' && e.key <= '9' && !e.ctrlKey && !e.metaKey && !e.altKey) {
     if (document.activeElement && document.activeElement.tagName === 'INPUT') return;
     showSection('bloco' + e.key);
   }
@@ -1411,6 +1543,364 @@ function drawBleuChart(ch,cdk,cbleu){
   const pg=bctx.createRadialGradient(ux,uy,5,ux,uy,13);pg.addColorStop(0,'rgba(52,211,153,0.45)');pg.addColorStop(1,'rgba(52,211,153,0)');bctx.beginPath();bctx.arc(ux,uy,13,0,Math.PI*2);bctx.fillStyle=pg;bctx.fill();
   bctx.beginPath();bctx.arc(ux,uy,4.5,0,Math.PI*2);bctx.fillStyle='#34d399';bctx.shadowColor='#34d399';bctx.shadowBlur=12;bctx.fill();bctx.shadowBlur=0;
   bctx.fillStyle='#34d399';bctx.font='700 9px Montserrat';bctx.textAlign='left';bctx.fillText('h='+ch+' | BLEU='+cbleu.toFixed(1),ux+15,uy-3);
+}
+
+// ===========================================
+// BIG O COMPLEXITY CHARTS (Bloco 9)
+// ===========================================
+function initBigOCharts() {
+  drawO1();
+  drawOLogN();
+  drawON();
+  drawCompare();
+}
+
+// --- O(1) CONSTANT ---
+function drawO1() {
+  const c = document.getElementById('chartO1');
+  if (!c) return;
+  const ctx = c.getContext('2d');
+  const W = 700, H = 220;
+  const pad = { top: 24, right: 30, bottom: 36, left: 50 };
+  const pw = W - pad.left - pad.right, ph = H - pad.top - pad.bottom;
+  const cost = +(document.getElementById('o1cost')?.value || 3);
+  const maxN = 200;
+  const maxY = 12;
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Grid
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)'; ctx.lineWidth = 1;
+  for (let i = 0; i <= 5; i++) {
+    const y = pad.top + (ph / 5) * i;
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(W - pad.right, y); ctx.stroke();
+  }
+  for (let x = 0; x <= 10; x++) {
+    const cx = pad.left + (pw / 10) * x;
+    ctx.beginPath(); ctx.moveTo(cx, pad.top); ctx.lineTo(cx, H - pad.bottom); ctx.stroke();
+  }
+
+  // Axes
+  ctx.strokeStyle = 'rgba(255,255,255,0.15)'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(pad.left, pad.top); ctx.lineTo(pad.left, H - pad.bottom); ctx.lineTo(W - pad.right, H - pad.bottom); ctx.stroke();
+
+  // Y labels
+  ctx.fillStyle = '#6b738a'; ctx.font = '500 9px Montserrat'; ctx.textAlign = 'right';
+  for (let v = 0; v <= maxY; v += 3) {
+    const y = H - pad.bottom - (v / maxY) * ph;
+    ctx.fillText(v + '', pad.left - 8, y + 3);
+  }
+  // X labels
+  ctx.textAlign = 'center';
+  for (let v = 0; v <= maxN; v += 50) {
+    const x = pad.left + (v / maxN) * pw;
+    ctx.fillText(v + '', x, H - pad.bottom + 14);
+  }
+
+  // O(1) line — flat
+  const yFlat = H - pad.bottom - (cost / maxY) * ph;
+  ctx.beginPath();
+  ctx.moveTo(pad.left, yFlat);
+  ctx.lineTo(W - pad.right, yFlat);
+  ctx.strokeStyle = '#34d399';
+  ctx.lineWidth = 3;
+  ctx.shadowColor = 'rgba(52,211,153,0.6)'; ctx.shadowBlur = 10;
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // Fill below
+  ctx.beginPath();
+  ctx.moveTo(pad.left, H - pad.bottom);
+  ctx.lineTo(pad.left, yFlat);
+  ctx.lineTo(W - pad.right, yFlat);
+  ctx.lineTo(W - pad.right, H - pad.bottom);
+  ctx.closePath();
+  const g = ctx.createLinearGradient(0, pad.top, 0, H - pad.bottom);
+  g.addColorStop(0, 'rgba(52,211,153,0.12)'); g.addColorStop(1, 'rgba(52,211,153,0.0)');
+  ctx.fillStyle = g; ctx.fill();
+
+  // Label
+  ctx.fillStyle = '#34d399'; ctx.font = '700 12px Montserrat'; ctx.textAlign = 'left';
+  ctx.fillText('O(1) = ' + cost + ' — sempre igual', pad.left + 10, yFlat - 8);
+
+  // Annotation dots
+  [50, 100, 150, 200].forEach(n => {
+    const x = pad.left + (n / maxN) * pw;
+    ctx.beginPath(); ctx.arc(x, yFlat, 3.5, 0, Math.PI * 2);
+    ctx.fillStyle = '#34d399'; ctx.fill();
+  });
+}
+
+// --- O(log n) LOGARITHMIC ---
+function drawOLogN() {
+  const c = document.getElementById('chartOLogN');
+  if (!c) return;
+  const ctx = c.getContext('2d');
+  const W = 700, H = 220;
+  const pad = { top: 24, right: 30, bottom: 36, left: 50 };
+  const pw = W - pad.left - pad.right, ph = H - pad.top - pad.bottom;
+  const base = +(document.getElementById('ologbase')?.value || 2);
+  const maxN = 500;
+  const maxY = 12;
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Grid
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)'; ctx.lineWidth = 1;
+  for (let i = 0; i <= 5; i++) {
+    const y = pad.top + (ph / 5) * i;
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(W - pad.right, y); ctx.stroke();
+  }
+  for (let x = 0; x <= 10; x++) {
+    const cx = pad.left + (pw / 10) * x;
+    ctx.beginPath(); ctx.moveTo(cx, pad.top); ctx.lineTo(cx, H - pad.bottom); ctx.stroke();
+  }
+
+  // Axes
+  ctx.strokeStyle = 'rgba(255,255,255,0.15)'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(pad.left, pad.top); ctx.lineTo(pad.left, H - pad.bottom); ctx.lineTo(W - pad.right, H - pad.bottom); ctx.stroke();
+
+  // Y labels
+  ctx.fillStyle = '#6b738a'; ctx.font = '500 9px Montserrat'; ctx.textAlign = 'right';
+  for (let v = 0; v <= maxY; v += 3) {
+    const y = H - pad.bottom - (v / maxY) * ph;
+    ctx.fillText(v + '', pad.left - 8, y + 3);
+  }
+  // X labels
+  ctx.textAlign = 'center';
+  for (let v = 0; v <= maxN; v += 100) {
+    const x = pad.left + (v / maxN) * pw;
+    ctx.fillText(v + '', x, H - pad.bottom + 14);
+  }
+
+  // O(log n) curve
+  ctx.beginPath();
+  let firstPoint = true;
+  for (let n = 1; n <= maxN; n += 2) {
+    const yVal = Math.log(n) / Math.log(base);
+    const x = pad.left + (n / maxN) * pw;
+    const y = H - pad.bottom - Math.min(yVal / maxY, 1) * ph;
+    if (firstPoint) { ctx.moveTo(x, y); firstPoint = false; }
+    else ctx.lineTo(x, y);
+  }
+  ctx.strokeStyle = '#4d8af0';
+  ctx.lineWidth = 3;
+  ctx.shadowColor = 'rgba(77,138,240,0.5)'; ctx.shadowBlur = 10;
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // Fill below
+  ctx.lineTo(W - pad.right, H - pad.bottom);
+  ctx.lineTo(pad.left, H - pad.bottom);
+  ctx.closePath();
+  const g = ctx.createLinearGradient(0, pad.top, 0, H - pad.bottom);
+  g.addColorStop(0, 'rgba(77,138,240,0.1)'); g.addColorStop(1, 'rgba(77,138,240,0.0)');
+  ctx.fillStyle = g; ctx.fill();
+
+  // Label
+  ctx.fillStyle = '#4d8af0'; ctx.font = '700 12px Montserrat'; ctx.textAlign = 'left';
+  ctx.fillText('O(log n) — desacelera', pad.left + 40, pad.top + 6);
+
+  // Update example values
+  const ex1 = Math.ceil(Math.log(1000) / Math.log(base));
+  const ex2 = Math.ceil(Math.log(1000000) / Math.log(base));
+  const ex3 = Math.ceil(Math.log(1000000000) / Math.log(base));
+  const el1 = document.getElementById('ologEx1'), el2 = document.getElementById('ologEx2'), el3 = document.getElementById('ologEx3');
+  if (el1) el1.textContent = ex1;
+  if (el2) el2.textContent = ex2;
+  if (el3) el3.textContent = ex3;
+}
+
+// --- O(n) LINEAR ---
+function drawON() {
+  const c = document.getElementById('chartON');
+  if (!c) return;
+  const ctx = c.getContext('2d');
+  const W = 700, H = 220;
+  const pad = { top: 24, right: 30, bottom: 36, left: 50 };
+  const pw = W - pad.left - pad.right, ph = H - pad.top - pad.bottom;
+  const opsPerItem = +(document.getElementById('onops')?.value || 1);
+  const maxN = 300;
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Grid
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)'; ctx.lineWidth = 1;
+  for (let i = 0; i <= 5; i++) {
+    const y = pad.top + (ph / 5) * i;
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(W - pad.right, y); ctx.stroke();
+  }
+  for (let x = 0; x <= 10; x++) {
+    const cx = pad.left + (pw / 10) * x;
+    ctx.beginPath(); ctx.moveTo(cx, pad.top); ctx.lineTo(cx, H - pad.bottom); ctx.stroke();
+  }
+
+  // Max y based on ops
+  const maxY = Math.max(15, opsPerItem * maxN);
+  // Round up
+  const roundMaxY = Math.ceil(maxY / 100) * 100;
+
+  // Axes
+  ctx.strokeStyle = 'rgba(255,255,255,0.15)'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(pad.left, pad.top); ctx.lineTo(pad.left, H - pad.bottom); ctx.lineTo(W - pad.right, H - pad.bottom); ctx.stroke();
+
+  // Y labels
+  ctx.fillStyle = '#6b738a'; ctx.font = '500 9px Montserrat'; ctx.textAlign = 'right';
+  for (let v = 0; v <= roundMaxY; v += roundMaxY / 5) {
+    const y = H - pad.bottom - (v / roundMaxY) * ph;
+    ctx.fillText(Math.round(v) + '', pad.left - 8, y + 3);
+  }
+  // X labels
+  ctx.textAlign = 'center';
+  for (let v = 0; v <= maxN; v += 50) {
+    const x = pad.left + (v / maxN) * pw;
+    ctx.fillText(v + '', x, H - pad.bottom + 14);
+  }
+
+  // O(n) line
+  ctx.beginPath();
+  ctx.moveTo(pad.left, H - pad.bottom);
+  const endYOps = opsPerItem * maxN;
+  ctx.lineTo(W - pad.right, H - pad.bottom - (endYOps / roundMaxY) * ph);
+  ctx.strokeStyle = '#f59e4b';
+  ctx.lineWidth = 3;
+  ctx.shadowColor = 'rgba(245,158,75,0.5)'; ctx.shadowBlur = 10;
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // Fill below
+  ctx.lineTo(W - pad.right, H - pad.bottom);
+  ctx.closePath();
+  const g = ctx.createLinearGradient(0, pad.top, 0, H - pad.bottom);
+  g.addColorStop(0, 'rgba(245,158,75,0.1)'); g.addColorStop(1, 'rgba(245,158,75,0.0)');
+  ctx.fillStyle = g; ctx.fill();
+
+  // Label
+  ctx.fillStyle = '#f59e4b'; ctx.font = '700 12px Montserrat'; ctx.textAlign = 'left';
+  ctx.fillText('O(n) = ' + opsPerItem + 'n — cresce reto', pad.left + 40, pad.top + 6);
+}
+
+// --- COMPARISON CHART ---
+function drawCompare() {
+  const c = document.getElementById('chartCompare');
+  if (!c) return;
+  const ctx = c.getContext('2d');
+  const W = 700, H = 340;
+  const pad = { top: 30, right: 30, bottom: 44, left: 60 };
+  const pw = W - pad.left - pad.right, ph = H - pad.top - pad.bottom;
+  const maxN = +(document.getElementById('compareN')?.value || 200);
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Grid
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)'; ctx.lineWidth = 1;
+  for (let i = 0; i <= 6; i++) {
+    const y = pad.top + (ph / 6) * i;
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(W - pad.right, y); ctx.stroke();
+  }
+  for (let x = 0; x <= 8; x++) {
+    const cx = pad.left + (pw / 8) * x;
+    ctx.beginPath(); ctx.moveTo(cx, pad.top); ctx.lineTo(cx, H - pad.bottom); ctx.stroke();
+  }
+
+  // Max Y: use O(n) at maxN
+  const maxY = Math.max(20, maxN * 1.0);
+  const roundMaxY = Math.ceil(maxY / 100) * 100 || maxN;
+
+  // Axes
+  ctx.strokeStyle = 'rgba(255,255,255,0.15)'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(pad.left, pad.top); ctx.lineTo(pad.left, H - pad.bottom); ctx.lineTo(W - pad.right, H - pad.bottom); ctx.stroke();
+
+  // Y labels
+  ctx.fillStyle = '#6b738a'; ctx.font = '500 9px Montserrat'; ctx.textAlign = 'right';
+  for (let v = 0; v <= roundMaxY; v += roundMaxY / 6) {
+    const y = H - pad.bottom - (v / roundMaxY) * ph;
+    ctx.fillText(Math.round(v) + '', pad.left - 8, y + 3);
+  }
+  // X labels
+  ctx.textAlign = 'center';
+  const xStep = Math.max(1, Math.floor(maxN / 8));
+  for (let v = 0; v <= maxN; v += xStep) {
+    const x = pad.left + (v / maxN) * pw;
+    ctx.fillText(v + '', x, H - pad.bottom + 15);
+  }
+
+  // --- O(n) FIRST (drawn behind) ---
+  ctx.beginPath();
+  ctx.moveTo(pad.left, H - pad.bottom);
+  const onEnd = maxN;
+  ctx.lineTo(W - pad.right, H - pad.bottom - (onEnd / roundMaxY) * ph);
+  ctx.strokeStyle = 'rgba(245,158,75,0.5)'; ctx.lineWidth = 2.5;
+  ctx.stroke();
+
+  // --- O(log n) ---
+  ctx.beginPath();
+  let firstPt = true;
+  for (let n = 1; n <= maxN; n += Math.max(1, Math.floor(maxN / 600))) {
+    const yVal = Math.log2(n);
+    const x = pad.left + (n / maxN) * pw;
+    const y = H - pad.bottom - Math.min(yVal / roundMaxY, 1) * ph;
+    if (firstPt) { ctx.moveTo(x, y); firstPt = false; }
+    else ctx.lineTo(x, y);
+  }
+  ctx.strokeStyle = '#4d8af0'; ctx.lineWidth = 3;
+  ctx.shadowColor = 'rgba(77,138,240,0.6)'; ctx.shadowBlur = 12;
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // --- O(1) ---
+  const yO1 = H - pad.bottom - (3 / roundMaxY) * ph;
+  ctx.beginPath();
+  ctx.moveTo(pad.left, yO1);
+  ctx.lineTo(W - pad.right, yO1);
+  ctx.strokeStyle = '#34d399'; ctx.lineWidth = 3.5;
+  ctx.shadowColor = 'rgba(52,211,153,0.7)'; ctx.shadowBlur = 14;
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // --- O(n²) dashed for reference ---
+  ctx.beginPath();
+  firstPt = true;
+  for (let n = 1; n <= maxN; n += Math.max(1, Math.floor(maxN / 600))) {
+    const yVal = (n * n) / maxN; // normalized
+    const x = pad.left + (n / maxN) * pw;
+    const y = H - pad.bottom - Math.min(yVal / roundMaxY, 1) * ph;
+    if (y < pad.top) continue;
+    if (firstPt) { ctx.moveTo(x, y); firstPt = false; }
+    else ctx.lineTo(x, y);
+  }
+  ctx.strokeStyle = '#f87171'; ctx.lineWidth = 2;
+  ctx.setLineDash([6, 4]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Legend
+  ctx.font = '700 11px Montserrat';
+  const lx = pad.left + pw * 0.65;
+
+  ctx.fillStyle = '#f87171'; ctx.fillText('O(n²) — quadrático', lx, pad.top + 10);
+  ctx.fillStyle = '#f59e4b'; ctx.fillText('O(n) — linear', lx, pad.top + 28);
+  ctx.fillStyle = '#4d8af0'; ctx.fillText('O(log n) — log', lx, pad.top + 46);
+  ctx.fillStyle = '#34d399'; ctx.fillText('O(1) — constante', lx, pad.top + 64);
+
+  // Annotation: at maxN
+  const xn = W - pad.right - 20;
+  const ynO1 = yO1;
+  const ynLog = H - pad.bottom - Math.min(Math.log2(maxN) / roundMaxY, 1) * ph;
+  const ynN = H - pad.bottom - (maxN / roundMaxY) * ph;
+
+  // Dot for O(1)
+  ctx.beginPath(); ctx.arc(xn, ynO1, 4, 0, Math.PI * 2); ctx.fillStyle = '#34d399'; ctx.fill();
+  // Dot for O(log n)
+  ctx.beginPath(); ctx.arc(xn, ynLog, 4, 0, Math.PI * 2); ctx.fillStyle = '#4d8af0'; ctx.fill();
+  // Dot for O(n)
+  ctx.beginPath(); ctx.arc(xn, ynN, 4, 0, Math.PI * 2); ctx.fillStyle = '#f59e4b'; ctx.fill();
+
+  // Value labels at right edge
+  ctx.font = '600 9px Montserrat'; ctx.textAlign = 'left';
+  ctx.fillStyle = '#34d399'; ctx.fillText('3 ops', xn + 8, ynO1 + 3);
+  ctx.fillStyle = '#4d8af0'; ctx.fillText(Math.ceil(Math.log2(maxN)) + ' passos', xn + 8, ynLog + 3);
+  ctx.fillStyle = '#f59e4b'; ctx.fillText(maxN + ' ops', xn + 8, ynN + 3);
 }
 
 // Initialize on first load
